@@ -1,0 +1,23 @@
+#VRML_SIM R2021a utf8
+WorldInfo {
+  coordinateSystem "NUE"
+}
+Viewpoint {
+  orientation -0.6931032800836722 0.6931032800836722 0.1980295085953349 0.75
+  position 1.1748130542270414 1.5705544703957945 2.257086299688222
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+RectangleArena {
+  floorSize 5 5
+  floorTileSize 0.25 0.25
+}
+Nao {
+  hidden rotation_23 0 0.9999999999999999 0 0.9599999999591369
+  hidden rotation_26 0 1 0 0.9599999999591432
+  hidden rotation_35 0 0.9999999999999999 0 0.9599999999591297
+  hidden rotation_38 0 0.9999999999999999 0 0.9599999999591335
+  controller "nao_test"
+}
