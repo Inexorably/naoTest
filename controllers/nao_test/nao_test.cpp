@@ -31,9 +31,28 @@
 #include <iostream>
 #include <math.h>
 #include <assert.h>
+#include <vector>
 
 // All the webots classes are defined in the "webots" namespace
 using namespace webots;
+
+// globals - todo: make globals.h //
+
+const double FOOT_WIDTH = 0.08;  // per http://simspark.sourceforge.net/wiki/index.php/Models
+const double FOOT_LENGTH = 0.16;
+
+
+
+////////////////////////////////
+
+// STRUCTS - TODO: ADD TO SEPERATE SOURCE FILES ///
+
+struct point {
+  double x;
+  double y;
+};
+
+///////////////////////////////////////////////////
 
 // Utility functions /////////////////////////
 
@@ -45,6 +64,7 @@ double clamp(double value, double min, double max) {
   return value < min ? min : value > max ? max : value;
 }
 
+// Takes the left and right foot force sensors, and prints the values to console.
 void printFootSensors (TouchSensor *fsrL, TouchSensor *fsrR) {
   const double *fsv[2] = {fsrL->getValues(), fsrR->getValues()};  // force sensor values
 
@@ -79,9 +99,48 @@ void printFootSensors (TouchSensor *fsrL, TouchSensor *fsrR) {
   printf("|%3.1f  %3.1f| |%3.1f  %3.1f|  back\n", l[3], l[2], r[3], r[2]);
   printf("+--------+ +--------+\n");
   printf("total: %g Newtons, %g kilograms\n", newtonLeft + newtonRight, (newtonLeft + newtonRight) / 9.81);
-
 }
 
+// Returns a vector of 2 point elements consisting of the ZMP coordinates for each foot.
+std::vector<point> getZMPCoordinates (TouchSensor *fsrL, TouchSensor *fsrR) {
+  const double *fsv[2] = {fsrL->getValues(), fsrR->getValues()};  // force sensor values
+  double l[4], r[4];
+  double newtonLeft = 0, newtonRight = 0;
+  
+  l[0] = fsv[0][2] / 3.4 + 1.5 * fsv[0][0] + 1.15 * fsv[0][1];  // Left Foot Front Left
+  l[1] = fsv[0][2] / 3.4 + 1.5 * fsv[0][0] - 1.15 * fsv[0][1];  // Left Foot Front Right
+  l[2] = fsv[0][2] / 3.4 - 1.5 * fsv[0][0] - 1.15 * fsv[0][1];  // Left Foot Rear Right
+  l[3] = fsv[0][2] / 3.4 - 1.5 * fsv[0][0] + 1.15 * fsv[0][1];  // Left Foot Rear Left
+
+  r[0] = fsv[1][2] / 3.4 + 1.5 * fsv[1][0] + 1.15 * fsv[1][1];  // Right Foot Front Left
+  r[1] = fsv[1][2] / 3.4 + 1.5 * fsv[1][0] - 1.15 * fsv[1][1];  // Right Foot Front Right
+  r[2] = fsv[1][2] / 3.4 - 1.5 * fsv[1][0] - 1.15 * fsv[1][1];  // Right Foot Rear Right
+  r[3] = fsv[1][2] / 3.4 - 1.5 * fsv[1][0] + 1.15 * fsv[1][1];  // Right Foot Rear Left
+
+  int i;
+  for (i = 0; i < 4; ++i) {
+    l[i] = clamp(l[i], 0, 25);
+    r[i] = clamp(r[i], 0, 25);
+    newtonLeft += l[i];
+    newtonRight += r[i];
+  }
+  
+  // Create return object.
+  std::vector<point> zmps;
+  point temp;
+  
+  // Left foot.
+  temp.x = FOOT_WIDTH * ((l[1]+l[3])-(l[0]+l[2]))/(2*(l[0]+l[1]+l[2]+l[3]));
+  temp.y = FOOT_LENGTH * ((l[0]+l[1])-(l[2]+l[3]))/(2*(l[0]+l[1]+l[2]+l[3]));
+  zmps.push_back(temp);
+  
+  // Right foot.
+  temp.x = FOOT_WIDTH * ((r[1]+r[3])-(r[0]+r[2]))/(2*(r[0]+r[1]+r[2]+r[3]));
+  temp.y = FOOT_LENGTH * ((r[0]+r[1])-(r[2]+r[3]))/(2*(r[0]+r[1]+r[2]+r[3]));
+  zmps.push_back(temp);
+  
+  return zmps; 
+}
 /////////////////////////////////////////////
 
 // Simulated devices
@@ -160,7 +219,12 @@ int main(int argc, char **argv) {
       std::cout << "t = " << t << ", Position: " << pos[0] << ' ' << pos[1] << ' ' << pos[2];
       std::cout << ", COM: " << com[0] << ' ' << com[1] << ' ' << com[2] << std::endl;
       */
-      printFootSensors(fsrL, fsrR);
+      
+      //printFootSensors(fsrL, fsrR);
+      
+      std::vector<point> zmps = getZMPCoordinates(fsrL, fsrR);
+      
+      std::cout << zmps[0].x << ", " << zmps[0].y << std::endl;
       
       ticker = 0;
     }
