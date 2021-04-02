@@ -14,7 +14,7 @@ RectangleArena {
   floorSize 5 5
   floorTileSize 0.25 0.25
 }
-Nao {
+DEF NAO Nao {
   hidden position_0_0 3.067587416721861e-14
   hidden position2_0_0 -7.80832662704515e-09
   hidden position_0_1 1.5707963363985393

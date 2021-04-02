@@ -26,6 +26,8 @@
 #include <webots/TouchSensor.hpp>
 #include <webots/utils/motion.hpp>
 
+#include <webots/Supervisor.hpp>
+
 #include <iostream>
 #include <math.h>
 
@@ -44,10 +46,18 @@ static WbDeviceTag CameraTop, CameraBottom;  // cameras
 // "controllerArgs" field of the Robot node
 int main(int argc, char **argv) {
   // create the Robot instance.
-  Robot *robot = new Robot();
+  Supervisor *robot = new Supervisor();
 
   // get the time step of the current world.
   int timeStep = (int)robot->getBasicTimeStep();
+  
+  // get handle to robot's translation field
+  Node *robot_node = robot->getFromDef("NAO");
+  if (robot_node == NULL) {
+    std::cerr << "No DEF NAO node found in the current world file" << std::endl;
+    exit(1);
+  }
+  Field *trans_field = robot_node->getField("translation");
 
   // You should insert a getDevice-like function in order to get the
   // instance of a device of the robot. Something like:
@@ -65,10 +75,6 @@ int main(int argc, char **argv) {
   Camera *cameraBottom = robot->getCamera("CameraBottom");
   cameraTop->enable(4 * timeStep);
   cameraBottom->enable(4 * timeStep);
-  
-  // Set arms down.
-  LShoulderPitch->setPosition(0);
-  RShoulderPitch->setPosition(M_PI/2);
 
 
   // Main loop:
@@ -87,10 +93,17 @@ int main(int argc, char **argv) {
     // Print some info:
     static int ticker = 0;
     ticker++;
-    if (ticker > 30) {
-      std::cout << "t = " << t << ", COM = " << robot->getCenterOfMass() << std::endl; 
+    if (ticker > 60) {
+      const double *pos = trans_field->getSFVec3f();
+      const double *com = robot_node->getCenterOfMass();
+      std::cout << "t = " << t << ", Position: " << pos[0] << ' ' << pos[1] << ' ' << pos[2];
+      std::cout << ", COM: " << com[0] << ' ' << com[1] << ' ' << com[2] << std::endl;
       ticker = 0;
     }
+    
+    // Set arms down.
+    LShoulderPitch->setPosition(2*sin(t/10));
+    RShoulderPitch->setPosition(2*sin(t-M_PI)/10);
     
     // Do some linear interpolation with sin centered around sin(t-pi/2).  Then:
     // max at t%2pi == pi, min at t%2pi == 0.
