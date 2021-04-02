@@ -30,9 +30,59 @@
 
 #include <iostream>
 #include <math.h>
+#include <assert.h>
 
 // All the webots classes are defined in the "webots" namespace
 using namespace webots;
+
+// Utility functions /////////////////////////
+
+double clamp(double value, double min, double max) {
+  if (min > max) {
+    assert(0);
+    return value;
+  }
+  return value < min ? min : value > max ? max : value;
+}
+
+void printFootSensors (TouchSensor *fsrL, TouchSensor *fsrR) {
+  const double *fsv[2] = {fsrL->getValues(), fsrR->getValues()};  // force sensor values
+
+  double l[4], r[4];
+  double newtonLeft = 0, newtonRight = 0;
+
+  // The coefficients were calibrated against the real
+  // robot so as to obtain realistic sensor values.
+  l[0] = fsv[0][2] / 3.4 + 1.5 * fsv[0][0] + 1.15 * fsv[0][1];  // Left Foot Front Left
+  l[1] = fsv[0][2] / 3.4 + 1.5 * fsv[0][0] - 1.15 * fsv[0][1];  // Left Foot Front Right
+  l[2] = fsv[0][2] / 3.4 - 1.5 * fsv[0][0] - 1.15 * fsv[0][1];  // Left Foot Rear Right
+  l[3] = fsv[0][2] / 3.4 - 1.5 * fsv[0][0] + 1.15 * fsv[0][1];  // Left Foot Rear Left
+
+  r[0] = fsv[1][2] / 3.4 + 1.5 * fsv[1][0] + 1.15 * fsv[1][1];  // Right Foot Front Left
+  r[1] = fsv[1][2] / 3.4 + 1.5 * fsv[1][0] - 1.15 * fsv[1][1];  // Right Foot Front Right
+  r[2] = fsv[1][2] / 3.4 - 1.5 * fsv[1][0] - 1.15 * fsv[1][1];  // Right Foot Rear Right
+  r[3] = fsv[1][2] / 3.4 - 1.5 * fsv[1][0] + 1.15 * fsv[1][1];  // Right Foot Rear Left
+
+  int i;
+  for (i = 0; i < 4; ++i) {
+    l[i] = clamp(l[i], 0, 25);
+    r[i] = clamp(r[i], 0, 25);
+    newtonLeft += l[i];
+    newtonRight += r[i];
+  }
+
+  printf("----------foot sensors----------\n");
+  printf("   left       right\n");
+  printf("+--------+ +--------+\n");
+  printf("|%3.1f  %3.1f| |%3.1f  %3.1f|  front\n", l[0], l[1], r[0], r[1]);
+  printf("|        | |        |\n");
+  printf("|%3.1f  %3.1f| |%3.1f  %3.1f|  back\n", l[3], l[2], r[3], r[2]);
+  printf("+--------+ +--------+\n");
+  printf("total: %g Newtons, %g kilograms\n", newtonLeft + newtonRight, (newtonLeft + newtonRight) / 9.81);
+
+}
+
+/////////////////////////////////////////////
 
 // Simulated devices
 static WbDeviceTag CameraTop, CameraBottom;  // cameras
@@ -59,6 +109,8 @@ int main(int argc, char **argv) {
   }
   Field *trans_field = robot_node->getField("translation");
 
+  //////////////////////////////////////////////////////////////////////////
+
   // You should insert a getDevice-like function in order to get the
   // instance of a device of the robot. Something like:
   //  Motor *motor = robot->getMotor("motorname");
@@ -76,6 +128,12 @@ int main(int argc, char **argv) {
   cameraTop->enable(4 * timeStep);
   cameraBottom->enable(4 * timeStep);
 
+  TouchSensor *fsrL = robot->getTouchSensor("LFsr");
+  TouchSensor *fsrR = robot->getTouchSensor("RFsr");
+  fsrL->enable(timeStep);
+  fsrR->enable(timeStep);
+  
+  //////////////////////////////////////////////////////////////////////////
 
   // Main loop:
   // - perform simulation steps until Webots is stopping the controller
@@ -84,6 +142,8 @@ int main(int argc, char **argv) {
     // Read the sensors:
     // Enter here functions to read sensor data, like:
     //  double val = ds->getValue();
+    
+    // Find the 
 
     // Process sensor data here.
 
@@ -94,16 +154,22 @@ int main(int argc, char **argv) {
     static int ticker = 0;
     ticker++;
     if (ticker > 60) {
+      /*
       const double *pos = trans_field->getSFVec3f();
       const double *com = robot_node->getCenterOfMass();
       std::cout << "t = " << t << ", Position: " << pos[0] << ' ' << pos[1] << ' ' << pos[2];
       std::cout << ", COM: " << com[0] << ' ' << com[1] << ' ' << com[2] << std::endl;
+      */
+      printFootSensors(fsrL, fsrR);
+      
       ticker = 0;
     }
     
-    // Set arms down.
+    //Move arms.
     LShoulderPitch->setPosition(2*sin(t/10));
-    RShoulderPitch->setPosition(2*sin(t-M_PI)/10);
+    RShoulderPitch->setPosition(2*sin(t/10));
+    
+
     
     // Do some linear interpolation with sin centered around sin(t-pi/2).  Then:
     // max at t%2pi == pi, min at t%2pi == 0.
