@@ -1,5 +1,7 @@
 #pragma once
 
+// Various utility functions such as printing variables to console or misc math utilities.
+
 #include <webots/TouchSensor.hpp>
 
 #include <vector>

@@ -35,6 +35,7 @@
 
 #include "utilities.h"
 #include "globals.h"
+#include "motions.h"
 
 // All the webots classes are defined in the "webots" namespace
 using namespace webots;
@@ -119,48 +120,16 @@ int main(int argc, char **argv) {
 
     // Process sensor data here.
 
-    // Enter here functions to send actuator commands, like:
-    //  motor->setPosition(10.0);
+    // Move right leg randomly.
+    moveRightLeg(t, RHipYawPitch, RHipRoll, RHipPitch, RKneePitch, RAnklePitch, RAnkleRoll);
     
     // Print some info:
     static int ticker = 0;
     ticker++;
-    if (ticker > 60) {
-      /*
-      const double *pos = trans_field->getSFVec3f();
-      const double *com = robot_node->getCenterOfMass();
-      std::cout << "t = " << t << ", Position: " << pos[0] << ' ' << pos[1] << ' ' << pos[2];
-      std::cout << ", COM: " << com[0] << ' ' << com[1] << ' ' << com[2] << std::endl;
-      */
-      
-      //printFootSensors(fsrL, fsrR);
-      
-      std::vector<point> zmps = getZMPCoordinates(fsrL, fsrR);
-      
-      std::cout << zmps[0].x << ", " << zmps[0].y << std::endl;
-      
+    if (ticker > 60) {      
       ticker = 0;
     }
     
-    //Move arms.
-    LShoulderPitch->setPosition(2*sin(t/10));
-    RShoulderPitch->setPosition(2*sin(t/10));
-    
-
-    
-    // Do some linear interpolation with sin centered around sin(t-pi/2).  Then:
-    // max at t%2pi == pi, min at t%2pi == 0.
-    // interpolation: y = y1 + ((x – x1) / (x2 – x1)) * (y2 – y1)
-    double interpolated = 0.7*(RHipPitch->getMinPosition() + ((sin(robot->getTime()/3.0) - -1) / (1 - -1) * (0 - RHipPitch->getMinPosition())));
-    //RHipPitch->setPosition(interpolated);
-/*
-    interpolated = LShoulderPitch->getMinPosition() + ((sin(robot->getTime()/3.0-M_PI)+1 - 0) / (2 - 0) * (LShoulderPitch->getMaxPosition() - 0));
-    LShoulderPitch->setPosition(LShoulderPitch->getMaxPosition());
-    
-
-    interpolated = RShoulderPitch->getMinPosition() + ((sin(robot->getTime()) - -1) / (1 - -1) * (0 - RShoulderPitch->getMinPosition()));
-    RShoulderPitch->setPosition(1.5);
-  */  
 
   };
 
