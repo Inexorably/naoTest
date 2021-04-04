@@ -5,8 +5,8 @@ void moveRightLeg(const double t, Motor *RHipYawPitch, Motor *RHipRoll, Motor *R
   // Begin the simulation by lifting the right hip / knee so that we are only supported on
   // the left foot, to simplify learning.  Wait 1 second for this to occur.
   if (t < 1){
-    RHipPitch->setPosition(-t);
-    RKneePitch->setPosition(t);
+    RHipPitch->setPosition(t*RHipPitch->getMinPosition());
+    RKneePitch->setPosition(t*RKneePitch->getMaxPosition());
     return;
   }
 
@@ -20,7 +20,7 @@ void moveRightLeg(const double t, Motor *RHipYawPitch, Motor *RHipRoll, Motor *R
   std::vector<Motor*> rightLegMotors;
   rightLegMotors.push_back(RHipYawPitch);
   rightLegMotors.push_back(RHipRoll);
-  rightLegMotors.push_back(RHipPitch);
+  //rightLegMotors.push_back(RHipPitch);
   rightLegMotors.push_back(RKneePitch);
   rightLegMotors.push_back(RAnklePitch);
   rightLegMotors.push_back(RAnkleRoll);

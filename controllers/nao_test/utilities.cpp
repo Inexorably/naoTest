@@ -47,7 +47,7 @@ double clamp(double value, double min, double max) {
 }
 
 // Returns a vector of 2 point elements consisting of the ZMP coordinates for each foot.
-std::vector<point> getZMPCoordinates (TouchSensor *fsrL, TouchSensor *fsrR) {
+std::vector<Point> getZMPCoordinates (TouchSensor *fsrL, TouchSensor *fsrR) {
   const double *fsv[2] = {fsrL->getValues(), fsrR->getValues()};  // force sensor values
   double l[4], r[4];
   double newtonLeft = 0, newtonRight = 0;
@@ -71,17 +71,17 @@ std::vector<point> getZMPCoordinates (TouchSensor *fsrL, TouchSensor *fsrR) {
   }
   
   // Create return object.
-  std::vector<point> zmps;
-  point temp;
+  std::vector<Point> zmps;
+  Point temp;
   
   // Left foot.
-  temp.x = FOOT_WIDTH * ((l[1]+l[3])-(l[0]+l[2]))/(2*(l[0]+l[1]+l[2]+l[3]));
-  temp.y = FOOT_LENGTH * ((l[0]+l[1])-(l[2]+l[3]))/(2*(l[0]+l[1]+l[2]+l[3]));
+  temp.m_x = FOOT_WIDTH * ((l[1]+l[3])-(l[0]+l[2]))/(2*(l[0]+l[1]+l[2]+l[3]));
+  temp.m_y = FOOT_LENGTH * ((l[0]+l[1])-(l[2]+l[3]))/(2*(l[0]+l[1]+l[2]+l[3]));
   zmps.push_back(temp);
   
   // Right foot.
-  temp.x = FOOT_WIDTH * ((r[1]+r[3])-(r[0]+r[2]))/(2*(r[0]+r[1]+r[2]+r[3]));
-  temp.y = FOOT_LENGTH * ((r[0]+r[1])-(r[2]+r[3]))/(2*(r[0]+r[1]+r[2]+r[3]));
+  temp.m_x = FOOT_WIDTH * ((r[1]+r[3])-(r[0]+r[2]))/(2*(r[0]+r[1]+r[2]+r[3]));
+  temp.m_y = FOOT_LENGTH * ((r[0]+r[1])-(r[2]+r[3]))/(2*(r[0]+r[1]+r[2]+r[3]));
   zmps.push_back(temp);
   
   return zmps; 

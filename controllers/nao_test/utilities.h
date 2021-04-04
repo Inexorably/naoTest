@@ -14,9 +14,9 @@
 using namespace webots;
 
 // Simple cartesian point structure.
-struct point {
-  double x;
-  double y;
+struct Point {
+  double m_x;
+  double m_y;
 };
 
 // Takes the left and right foot force sensors, and prints the values to console.
@@ -26,4 +26,4 @@ void printFootSensors (TouchSensor *fsrL, TouchSensor *fsrR);
 double clamp(double value, double min, double max);
 
 // Returns a vector of 2 point elements consisting of the ZMP coordinates for each foot.
-std::vector<point> getZMPCoordinates(TouchSensor *fsrL, TouchSensor *fsrR);
+std::vector<Point> getZMPCoordinates(TouchSensor *fsrL, TouchSensor *fsrR);
