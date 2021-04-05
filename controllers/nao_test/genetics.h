@@ -7,6 +7,7 @@
 #include <random>
 #include <math.h>
 #include <iostream>
+#include <algorithm>
 
 #include "globals.h"
 #include "utilities.h"
@@ -67,7 +68,7 @@ struct Organism {
     
     // The fitness of the organism (determined by average time before falling in simulation).
     // Returns m_totalStableTime/m_numSimulations.
-    double getFitness();
+    double getFitness() const;
     
     // Total time stable accross all simulations.
     double m_totalStableTime;
@@ -76,6 +77,7 @@ struct Organism {
     int m_numSimulations;
    
     // Defining comparison operators of organism for sorting / pruning purposes.
+    // Compares by getFitness().
     bool operator < (const Organism& rhs) const;
     bool operator > (const Organism& rhs) const;
 };
@@ -88,9 +90,7 @@ struct Population {
   
   // This will be kept in descending order.  > operator for organism will be defined.
   std::vector<Organism> m_organisms;
-
-
-
-
-
+  
+  // Sort the m_organisms vector using Organism::operator<.
+  void sortOrganisms();
 };

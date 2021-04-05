@@ -150,3 +150,28 @@ void Organism::mutate() {
     }
   }
 }
+
+// The fitness of the organism (determined by average time before falling in simulation).
+// Returns m_totalStableTime/m_numSimulations (the average stable time).
+double Organism::getFitness() const {
+  return m_totalStableTime/m_numSimulations;
+}
+
+// Defining comparison operators of organism for sorting / pruning purposes.
+// Compares by getFitness().
+bool Organism::operator < (const Organism& rhs) const {
+  return getFitness() < rhs.getFitness();
+}
+
+// Defining comparison operators of organism for sorting / pruning purposes.
+// Compares by getFitness().
+bool Organism::operator > (const Organism& rhs) const {
+  return getFitness() > rhs.getFitness();
+}
+
+///////////////// Population /////////////////////////////////
+
+// Sort the m_organisms vector using Organism::operator<.
+void Population::sortOrganisms() {
+  std::sort(m_organisms.begin(), m_organisms.end());
+}
