@@ -38,7 +38,7 @@ void printFootSensors (TouchSensor *fsrL, TouchSensor *fsrR) {
 }
 
 // If value is between min:max, return value.  Else, return max if value > max or min if value < min.
-double clamp(double value, double min, double max) {
+double clamp(const double value, const double min, const double max) {
   if (min > max) {
     assert(0);
     return value;
@@ -85,4 +85,13 @@ std::vector<Point> getZMPCoordinates (TouchSensor *fsrL, TouchSensor *fsrR) {
   zmps.push_back(temp);
   
   return zmps; 
+}
+
+// Returns true with probability p.
+bool trueWithProbability(const double p) {
+  std::random_device rd;
+  std::mt19937 mt(rd());
+  std::bernoulli_distribution d(p);
+
+  return d(mt);
 }

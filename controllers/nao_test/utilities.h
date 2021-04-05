@@ -7,6 +7,7 @@
 #include <vector>
 #include <assert.h>
 #include <iostream>
+#include <random>
 
 #include "globals.h"
 
@@ -23,7 +24,10 @@ struct Point {
 void printFootSensors (TouchSensor *fsrL, TouchSensor *fsrR);
 
 // If value is between min:max, return value.  Else, return max if value > max or min if value < min.
-double clamp(double value, double min, double max);
+double clamp(const double value, const double min, const double max);
 
 // Returns a vector of 2 point elements consisting of the ZMP coordinates for each foot.
 std::vector<Point> getZMPCoordinates(TouchSensor *fsrL, TouchSensor *fsrR);
+
+// Returns true with probability p.
+bool trueWithProbability(const double p);
