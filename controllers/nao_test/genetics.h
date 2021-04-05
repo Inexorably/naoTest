@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include "globals.h"
+#include "utilities.h"
 
 // Expressions are for each of the 3 state vars comprising an equation (Genetic).
 // Member vectors are of size 2*EXPRESSION_MAX_SUBLENGTHS.

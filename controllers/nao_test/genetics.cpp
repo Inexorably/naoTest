@@ -104,7 +104,7 @@ double Gene::calculateValue(const double& x1, const double& x2, const double& x3
       result += m_expressions[i].m_sin[j] * sin(x[i] * m_expressions[i].m_sin[j+1]);
     }
     
-    std::cout << "sin: " << result << std::endl;
+    // std::cout << "sin: " << result << std::endl;
     
     // cos
     for (size_t j = 0; j < m_expressions[i].m_cos.size(); j += 2) {
@@ -135,4 +135,18 @@ Organism::Organism() {
   
   m_totalStableTime = 0;
   m_numSimulations = 0;
+}
+
+// Mutate the current organism.  Each expression has a MUTATION_CHANCE chance of changing.
+void Organism::mutate() {
+  //Loop through the m_genetics and m_expressions and randomly change the expressions.
+  // m_genetics is of size NUM_OUTPUT_VARS, and each Gene g.m_expressions is of size NUM_STATE_VARS.
+  for (Gene& g : m_genetics) {
+    for (Expression& e : g.m_expressions) {
+      // Randomly replace one of the expressions with a new one.
+      if (trueWithProbability(MUTATION_CHANCE)) {
+        e = Expression();
+      }
+    }
+  }
 }

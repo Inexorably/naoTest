@@ -30,3 +30,6 @@ const int NUM_STATE_VARS = 3;
 
 // Number of output vars.
 const int NUM_OUTPUT_VARS = 8;
+
+// Mutation probability.
+const double MUTATION_CHANCE = 1/static_cast<double>(NUM_STATE_VARS * NUM_OUTPUT_VARS);
