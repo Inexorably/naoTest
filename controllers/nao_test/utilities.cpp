@@ -77,11 +77,25 @@ std::vector<Point> getZMPCoordinates (TouchSensor *fsrL, TouchSensor *fsrR) {
   // Left foot.
   temp.m_x = FOOT_WIDTH * ((l[1]+l[2])-(l[0]+l[3]))/(2*(l[0]+l[1]+l[3]+l[2]));
   temp.m_y = FOOT_LENGTH * ((l[0]+l[1])-(l[3]+l[2]))/(2*(l[0]+l[1]+l[3]+l[2]));
+  
+  // Check for NaN errors.
+  if (std::isnan(temp.m_x))
+    temp.m_x = 0;
+  if (std::isnan(temp.m_y))
+    temp.m_y = 0;
+    
   zmps.push_back(temp);
   
   // Right foot.
   temp.m_x = FOOT_WIDTH * ((r[1]+r[3])-(r[0]+r[2]))/(2*(r[0]+r[1]+r[2]+r[3]));
   temp.m_y = FOOT_LENGTH * ((r[0]+r[1])-(r[2]+r[3]))/(2*(r[0]+r[1]+r[2]+r[3]));
+  
+  // Check for NaN errors.
+  if (std::isnan(temp.m_x))
+    temp.m_x = 0;
+  if (std::isnan(temp.m_y))
+    temp.m_y = 0;
+    
   zmps.push_back(temp);
   
   return zmps; 
