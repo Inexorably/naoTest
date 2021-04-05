@@ -17,10 +17,16 @@ const double LAMBDA = 0.01;
 // See Expression class in "genetics.h".
 const int MAX_EXPRESSION_SUBLENGTHS = 4;
 
-// Expression constant min / max values.
-const double EXPRESSION_CONST_MIN = -20;
-const double EXPRESSION_CONST_MAX = 20;
+// Expression constant min / max values for non exponential values.
+const double EXPRESSION_CONST_MIN = -0.2;
+const double EXPRESSION_CONST_MAX = 0.2;
+
+// Exponential constant bounds.
+const double EXPRESSION_CONST_EXP_MAX = 2;
+const double EXPRESSION_CONST_EXP_MIN = -3;
 
 // Number of state variables.
 const int NUM_STATE_VARS = 3;
 
+// Number of output vars.
+const int NUM_OUTPUT_VARS = 8;

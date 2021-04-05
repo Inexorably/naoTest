@@ -6,6 +6,7 @@
 #include <vector>
 #include <random>
 #include <math.h>
+#include <iostream>
 
 #include "globals.h"
 
@@ -18,7 +19,7 @@ struct Expression {
   // Coefficients for polynomial A1*x^B1 ...
   std::vector<double> m_poly;
   
-  // Coefficients for log, A1*log(B1*x) ...
+  // Coefficients for log, A1*log(|B1*x|) ...
   std::vector<double> m_log;
 
   // Coefficients for sin, A1*sin(B1*x) ...

@@ -10,6 +10,7 @@ Expression::Expression() {
   std::random_device rd;
   std::mt19937 mt(rd());
   std::uniform_int_distribution<int> distI(0, MAX_EXPRESSION_SUBLENGTHS);
+  std::uniform_real_distribution<double> distExp(EXPRESSION_CONST_EXP_MIN, EXPRESSION_CONST_EXP_MAX);
   std::uniform_real_distribution<double> distD(EXPRESSION_CONST_MIN, EXPRESSION_CONST_MAX);
   
   // For each of the member vectors, fill randomly.
@@ -20,7 +21,7 @@ Expression::Expression() {
     // For each iteration, we push back two random doubles, since the basic forms of each subexpression
     // require an A and B value.  Could simply loop i < 2*temp, but this better represents the idea.
     m_poly.push_back(distD(mt));
-    m_poly.push_back(distD(mt));
+    m_poly.push_back(distExp(mt));
   }
   
   // m_log
@@ -56,7 +57,7 @@ Expression::Expression() {
     // For each iteration, we push back two random doubles, since the basic forms of each subexpression
     // require an A and B value.  Could simply loop i < 2*temp, but this better represents the idea.
     m_exp.push_back(distD(mt));
-    m_exp.push_back(distD(mt));
+    m_exp.push_back(distExp(mt));
   }
 }
 
@@ -89,26 +90,38 @@ double Gene::calculateValue(const double& x1, const double& x2, const double& x3
       result += m_expressions[i].m_poly[j] * pow(x[i], m_expressions[i].m_poly[j+1]);
     }
     
+    //std::cout << "poly: " << result << std::endl;
+    
     // log
     for (size_t j = 0; j < m_expressions[i].m_log.size(); j += 2) {
-      result += m_expressions[i].m_log[j] * log(x[i] * m_expressions[i].m_log[j+1]);
+      result += m_expressions[i].m_log[j] * log(abs(x[i] * m_expressions[i].m_log[j+1]));
     }
+    
+    //std::cout << "log: " << result << std::endl;
     
     // sin
     for (size_t j = 0; j < m_expressions[i].m_sin.size(); j += 2) {
       result += m_expressions[i].m_sin[j] * sin(x[i] * m_expressions[i].m_sin[j+1]);
     }
     
+    std::cout << "sin: " << result << std::endl;
+    
     // cos
     for (size_t j = 0; j < m_expressions[i].m_cos.size(); j += 2) {
       result += m_expressions[i].m_cos[j] * cos(x[i] * m_expressions[i].m_cos[j+1]);
     }
     
+    //std::cout << "cos: " << result << std::endl;
+    
     // exp
     for (size_t j = 0; j < m_expressions[i].m_exp.size(); j += 2) {
       result += m_expressions[i].m_exp[j] * exp(x[i] * m_expressions[i].m_exp[j+1]);
     }
+    
+    //std::cout << "exp: " << result << std::endl;
   }
 
   return result;
 }
+
+///////////////// Organism /////////////////////////////////
