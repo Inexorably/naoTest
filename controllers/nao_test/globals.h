@@ -15,7 +15,7 @@ const double LAMBDA = 0.01;
 
 // Determines the max number of instances of a type of function on a state variable an expression can have.
 // See Expression class in "genetics.h".
-const int MAX_EXPRESSION_SUBLENGTHS = 4;
+const int EXPRESSION_MAX_SUBLENGTHS = 4;
 
 // Expression constant min / max values for non exponential values.
 const double EXPRESSION_CONST_MIN = -0.2;

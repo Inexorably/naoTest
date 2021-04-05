@@ -9,7 +9,7 @@ Expression::Expression() {
   // Create a double and int rng device.
   std::random_device rd;
   std::mt19937 mt(rd());
-  std::uniform_int_distribution<int> distI(0, MAX_EXPRESSION_SUBLENGTHS);
+  std::uniform_int_distribution<int> distI(0, EXPRESSION_MAX_SUBLENGTHS);
   std::uniform_real_distribution<double> distExp(EXPRESSION_CONST_EXP_MIN, EXPRESSION_CONST_EXP_MAX);
   std::uniform_real_distribution<double> distD(EXPRESSION_CONST_MIN, EXPRESSION_CONST_MAX);
   
@@ -125,3 +125,14 @@ double Gene::calculateValue(const double& x1, const double& x2, const double& x3
 }
 
 ///////////////// Organism /////////////////////////////////
+
+// Construct an organism with NUM_OUTPUT_VARS Gene members in m_genetics.
+Organism::Organism() {
+  for (int i = 0; i < NUM_OUTPUT_VARS; i++) { 
+    Gene temp;
+    m_genetics.push_back(temp);
+  }
+  
+  m_totalStableTime = 0;
+  m_numSimulations = 0;
+}

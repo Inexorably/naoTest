@@ -11,7 +11,7 @@
 #include "globals.h"
 
 // Expressions are for each of the 3 state vars comprising an equation (Genetic).
-// Member vectors are of size 2*MAX_EXPRESSION_SUBLENGTHS.
+// Member vectors are of size 2*EXPRESSION_MAX_SUBLENGTHS.
 struct Expression {
   // Construct a random subexpression (single variable).
   Expression();
@@ -48,7 +48,7 @@ struct Gene {
 
 // The individual organisms of a population can mutate and reproduce.
 struct Organism {
-    // Construct an organism with 8 Gene members in m_genetics.
+    // Construct an organism with NUM_OUTPUT_VARS Gene members in m_genetics.
     Organism();
 
     // Mutate the current organism.
