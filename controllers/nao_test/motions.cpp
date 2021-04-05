@@ -11,7 +11,7 @@ void moveRightLeg(const double t, Motor *RHipYawPitch, Motor *RHipRoll, Motor *R
   }
 
 
-  // Generate a random number to deci
+  // Generate a random number for movement.
   std::random_device rd;
   std::mt19937 mt(rd());
   std::uniform_real_distribution<double> dist(0, 1);

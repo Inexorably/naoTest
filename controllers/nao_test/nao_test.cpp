@@ -36,6 +36,7 @@
 #include "utilities.h"
 #include "globals.h"
 #include "motions.h"
+#include "genetics.h"
 
 // All the webots classes are defined in the "webots" namespace
 using namespace webots;
@@ -107,7 +108,7 @@ int main(int argc, char **argv) {
   fsrR->enable(timeStep);
   
   //////////////////////////////////////////////////////////////////////////
-
+  
   // Main loop:
   // - perform simulation steps until Webots is stopping the controller
   while (robot->step(timeStep) != -1) {
@@ -121,12 +122,22 @@ int main(int argc, char **argv) {
     // Process sensor data here.
 
     // Move right leg randomly.
-    moveRightLeg(t, RHipYawPitch, RHipRoll, RHipPitch, RKneePitch, RAnklePitch, RAnkleRoll);
+    //moveRightLeg(t, RHipYawPitch, RHipRoll, RHipPitch, RKneePitch, RAnklePitch, RAnkleRoll);
+    
+    //RShoulderRoll->setPosition(-1*sin(t/3));
+    //RShoulderPitch->setPosition(2*sin(t/3));
+    //LShoulderPitch->setPosition(2*sin(t/3));
     
     // Print some info:
     static int ticker = 0;
     ticker++;
-    if (ticker > 60) {      
+    if (ticker > 60) {    
+      //printFootSensors (fsrL, fsrR);
+      std::cout << " test" << std::endl;
+      Gene g;
+      std::cout << g.calculateValue(1, 2, 3);
+      
+      
       ticker = 0;
     }
     
