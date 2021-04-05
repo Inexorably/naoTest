@@ -1,5 +1,11 @@
 #pragma once
 
+/////////////////////////////////////// Simulation constants /////////////////////////////////////////////
+
+// If the total grf / force feet supporting drops below FOOT_FORCE_MIN, the robot has fallen over
+// and we end the simulation.
+const double FOOT_FORCE_MIN = 40;
+
 /////////////////////////////////////// NAO physical properties //////////////////////////////////////////
 
 const double FOOT_WIDTH = 0.08;  // per http://simspark.sourceforge.net/wiki/index.php/Models

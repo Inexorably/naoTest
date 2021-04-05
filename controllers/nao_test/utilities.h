@@ -21,7 +21,7 @@ struct Point {
 };
 
 // Takes the left and right foot force sensors, and prints the values to console.
-void printFootSensors (TouchSensor *fsrL, TouchSensor *fsrR);
+void printFootSensors(TouchSensor *fsrL, TouchSensor *fsrR);
 
 // If value is between min:max, return value.  Else, return max if value > max or min if value < min.
 double clamp(const double value, const double min, const double max);
@@ -31,3 +31,7 @@ std::vector<Point> getZMPCoordinates(TouchSensor *fsrL, TouchSensor *fsrR);
 
 // Returns true with probability p.
 bool trueWithProbability(const double p);
+
+// Returns false if the robot has fallen over, as defined per total grf on feet < FOOT_FORCE_MIN.
+// Else returns true.
+bool isStable(TouchSensor *fsrL, TouchSensor *fsrR);

@@ -95,3 +95,34 @@ bool trueWithProbability(const double p) {
 
   return d(mt);
 }
+
+// Returns false if the robot has fallen over, as defined per total grf on feet < FOOT_FORCE_MIN.
+// Else returns true.
+bool isStable(TouchSensor *fsrL, TouchSensor *fsrR){
+  const double *fsv[2] = {fsrL->getValues(), fsrR->getValues()};  // force sensor values
+
+  double l[4], r[4];
+  double newtonLeft = 0, newtonRight = 0;
+
+  // The coefficients were calibrated against the real
+  // robot so as to obtain realistic sensor values.
+  l[0] = fsv[0][2] / 3.4 + 1.5 * fsv[0][0] + 1.15 * fsv[0][1];  // Left Foot Front Left
+  l[1] = fsv[0][2] / 3.4 + 1.5 * fsv[0][0] - 1.15 * fsv[0][1];  // Left Foot Front Right
+  l[3] = fsv[0][2] / 3.4 - 1.5 * fsv[0][0] - 1.15 * fsv[0][1];  // Left Foot Rear Left
+  l[2] = fsv[0][2] / 3.4 - 1.5 * fsv[0][0] + 1.15 * fsv[0][1];  // Left Foot Rear Right
+
+  r[0] = fsv[1][2] / 3.4 + 1.5 * fsv[1][0] + 1.15 * fsv[1][1];  // Right Foot Front Left
+  r[1] = fsv[1][2] / 3.4 + 1.5 * fsv[1][0] - 1.15 * fsv[1][1];  // Right Foot Front Right
+  r[3] = fsv[1][2] / 3.4 - 1.5 * fsv[1][0] - 1.15 * fsv[1][1];  // Right Foot Rear Left
+  r[2] = fsv[1][2] / 3.4 - 1.5 * fsv[1][0] + 1.15 * fsv[1][1];  // Right Foot Rear Right
+
+  int i;
+  for (i = 0; i < 4; ++i) {
+    l[i] = clamp(l[i], 0, 25);
+    r[i] = clamp(r[i], 0, 25);
+    newtonLeft += l[i];
+    newtonRight += r[i];
+  }
+  
+  return newtonLeft + newtonRight > FOOT_FORCE_MIN;
+}
