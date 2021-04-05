@@ -1,12 +1,3 @@
-// File:          nao_test.cpp
-// Date:
-// Description:
-// Author:
-// Modifications:
-
-// You may need to add webots include files such as
-// <webots/DistanceSensor.hpp>, <webots/Motor.hpp>, etc.
-// and/or to add some other includes
 #include <webots/Robot.hpp>
 #include <webots/Motor.hpp>
 #include <webots/camera.hpp>
@@ -41,6 +32,12 @@
 // All the webots classes are defined in the "webots" namespace
 using namespace webots;
 
+// Avoid memory leak.
+static int cleanUp(Supervisor *supervisor) {
+  delete supervisor;
+  return 0;
+}
+
 // This is the main program of your controller.
 // It creates an instance of your Robot instance, launches its
 // function(s) and destroys it at the end of the execution.
@@ -66,12 +63,13 @@ int main(int argc, char **argv) {
     exit(1);
   }
   Field *trans_field = robot_node->getField("translation");
+  Field *rot_field = robot_node->getField("rotation");
 
   //////////////////////////////////////////////////////////////////////////
 
   // Get motors per NAO proto file.
   
-  //Upper body
+  //Upper body.
   Motor *headYaw = robot->getMotor("HeadYaw");
   Motor *HeadPitch = robot->getMotor("HeadPitch");
   Motor *RShoulderPitch = robot->getMotor("RShoulderPitch");
@@ -83,7 +81,10 @@ int main(int argc, char **argv) {
   Motor *LElbowYaw = robot->getMotor("LElbowYaw");
   Motor *LElbowRoll = robot->getMotor("LElbowRoll");
   
-  //Lower body
+  // For iterating through:
+  Motor *upperBodyMotors[8] = {RShoulderPitch, RShoulderRoll, RElbowYaw, RElbowRoll, LShoulderPitch, LShoulderRoll, LElbowYaw, LElbowRoll};
+  
+  //Lower body.
   Motor *RHipYawPitch = robot->getMotor("RHipYawPitch");
   Motor *RHipRoll = robot->getMotor("RHipRoll");
   Motor *RHipPitch = robot->getMotor("RHipPitch");
@@ -109,43 +110,84 @@ int main(int argc, char **argv) {
   
   //////////////////////////////////////////////////////////////////////////
   
-  // Main loop:
-  // - perform simulation steps until Webots is stopping the controller
-  while (robot->step(timeStep) != -1) {
-    double t = robot->getTime();
-    // Read the sensors:
-    // Enter here functions to read sensor data, like:
-    //  double val = ds->getValue();
+  // Generate an organism population of controllers.
+  Population p(POPULATION_SIZE);
+  
+  // For debugging purposes, output the best current stable time.
+  double bestStableTime = 0;
+  
+  // Iterate through each generation and evolve.
+  for (int i = 0; i < NUM_GENERATIONS; i++) {
     
-    // Find the 
-
-    // Process sensor data here.
-
-    // Move right leg randomly.
-    //moveRightLeg(t, RHipYawPitch, RHipRoll, RHipPitch, RKneePitch, RAnklePitch, RAnkleRoll);
+    // For each organism in the population, run the simulation in order to generate fitness values.
+    for (Organism& o : p.m_organisms) {
     
-    //RShoulderRoll->setPosition(-1*sin(t/3));
-    //RShoulderPitch->setPosition(2*sin(t/3));
-    //LShoulderPitch->setPosition(2*sin(t/3));
+      // Get the start time of each organism's simulation.
+      double t0 = robot->getTime();
     
-    // Print some info:
-    static int ticker = 0;
-    ticker++;
-    if (ticker > 60) {    
-      //printFootSensors (fsrL, fsrR);
-      std::cout << " test" << std::endl;
-      Gene g;
-      std::cout << g.calculateValue(1, 2, 3);
+      // Simulate robot.
+      while (robot->step(timeStep) != -1) {
+        // Move right leg randomly.
+        moveRightLeg(robot->getTime(), RHipYawPitch, RHipRoll, RHipPitch, RKneePitch, RAnklePitch, RAnkleRoll);
+        
+        // Don't attempt to control every step.  Waiting more steps can reduce noise.
+        static int ticker = 0;
+        ticker++;
+        if (ticker > 4) {
+          for (int j = 0; j < NUM_OUTPUT_VARS; j++) {
+            // Get the inputs (zmpx, zmpy, respective motor target position).
+            // We are moving the right foot, so we are interested in the zmps of the left foot.
+            // The left foot zmps is the first element returned by getZMPCoordinates.
+            auto zmps = getZMPCoordinates(fsrL, fsrR);
+            double zmplx = zmps[0].m_x;
+            double zmply = zmps[0].m_y;
+            
+            // Find the respective motor input position and clamp it to the min:max bounds of that motor.
+            double input = o.m_genetics[j].calculateValue(zmplx, zmply, 0);
+            input = clamp(input, upperBodyMotors[j]->getMinPosition(), upperBodyMotors[j]->getMaxPosition());   
+            upperBodyMotors[j]->setPosition(input);
+          }
+          ticker = 0;
+        }
       
+        // If the robot falls, break.
+        if (!isStable(fsrL, fsrR)) {
+          break;
+        }
+      }
       
-      ticker = 0;
+      // Get the time the robot was stable.
+      double stableTime = robot->getTime() - t0;
+      
+      if (stableTime > bestStableTime) {
+        bestStableTime = stableTime;
+        std::cout << "New longest stable time: " << bestStableTime << std::endl;
+      }
+      
+      // Increment the runs counter and stable time tracker variables.
+      o.m_totalStableTime += stableTime;
+      ++o.m_numSimulations;
+      
+      // Reset simulation.
+      robot->simulationReset();
+      robot->step(timeStep);
+      robot->simulationReset();
     }
     
-
-  };
-
+    // Each organism in this generation of the population has been simulated now.
+    // We sort by the fitness score.
+    
+    // Save best performing half of population (POPULATION_SIZE/2).
+    
+    // Breed the best performing half of the population (POPULATION_SIZE/2/2 == POPULATION_SIZE/4).
+    
+    // Make copies of random members of the previous generation and children, 
+    // mutate them, and add them to population.
+    // Adds another POPULATION_SIZE/4, and restores our population to POPULATION_SIZE.
+  }
+  
   // Enter here exit cleanup code.
 
   delete robot;
-  return 0;
+  return 1;
 }
