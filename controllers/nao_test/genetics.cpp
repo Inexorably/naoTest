@@ -10,7 +10,7 @@ Expression::Expression() {
   std::random_device rd;
   std::mt19937 mt(rd());
   std::uniform_int_distribution<int> distI(0, EXPRESSION_MAX_SUBLENGTHS);
-  std::uniform_real_distribution<double> distExp(EXPRESSION_CONST_EXP_MIN, EXPRESSION_CONST_EXP_MAX);
+  std::uniform_int_distribution<int> distExp(EXPRESSION_CONST_EXP_MIN, EXPRESSION_CONST_EXP_MAX);
   std::uniform_real_distribution<double> distD(EXPRESSION_CONST_MIN, EXPRESSION_CONST_MAX);
   
   // For each of the member vectors, fill randomly.
@@ -24,6 +24,7 @@ Expression::Expression() {
     m_poly.push_back(distExp(mt));
   }
   
+  /*
   // m_log
   temp = distI(mt);             //The number of elements being added.
   for (int i = 0; i < temp; i++) {
@@ -32,6 +33,7 @@ Expression::Expression() {
     m_log.push_back(distD(mt));
     m_log.push_back(distD(mt));
   }
+  */
   
   // m_sin
   temp = distI(mt);             //The number of elements being added.
@@ -42,6 +44,7 @@ Expression::Expression() {
     m_sin.push_back(distD(mt));
   }
   
+  /*
   // m_cos
   temp = distI(mt);             //The number of elements being added.
   for (int i = 0; i < temp; i++) {
@@ -50,6 +53,7 @@ Expression::Expression() {
     m_cos.push_back(distD(mt));
     m_cos.push_back(distD(mt));
   }
+  */
   
   // m_exp
   temp = distI(mt);             //The number of elements being added.
@@ -87,7 +91,7 @@ double Gene::calculateValue(const double& x1, const double& x2, const double& x3
     
     // poly
     for (size_t j = 0; j < m_expressions[i].m_poly.size(); j += 2) {
-      result += m_expressions[i].m_poly[j] * pow(x[i], m_expressions[i].m_poly[j+1]);
+      result += m_expressions[i].m_poly[j] * pow(x[i], static_cast<int>(m_expressions[i].m_poly[j+1]));
     }
     
     //std::cout << "poly: " << result << std::endl;
@@ -104,7 +108,7 @@ double Gene::calculateValue(const double& x1, const double& x2, const double& x3
       result += m_expressions[i].m_sin[j] * sin(x[i] * m_expressions[i].m_sin[j+1]);
     }
     
-    // std::cout << "sin: " << result << std::endl;
+    //std::cout << "sin: " << result << std::endl;
     
     // cos
     for (size_t j = 0; j < m_expressions[i].m_cos.size(); j += 2) {
@@ -115,7 +119,7 @@ double Gene::calculateValue(const double& x1, const double& x2, const double& x3
     
     // exp
     for (size_t j = 0; j < m_expressions[i].m_exp.size(); j += 2) {
-      result += m_expressions[i].m_exp[j] * exp(x[i] * m_expressions[i].m_exp[j+1]);
+      result += m_expressions[i].m_exp[j] * exp(x[i] * m_expressions[i].m_exp[j+1]) - m_expressions[i].m_exp[j];
     }
     
     //std::cout << "exp: " << result << std::endl;
@@ -170,6 +174,13 @@ bool Organism::operator > (const Organism& rhs) const {
 }
 
 ///////////////// Population /////////////////////////////////
+
+// Initialize a population with n random organisms.
+Population::Population(const int& n) {
+  for (int i = 0; i < n; i++) {
+    m_organisms.push_back(Organism());
+  }
+}
 
 // Sort the m_organisms vector using Organism::operator<.
 void Population::sortOrganisms() {

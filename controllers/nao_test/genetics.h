@@ -22,15 +22,17 @@ struct Expression {
   std::vector<double> m_poly;
   
   // Coefficients for log, A1*log(|B1*x|) ...
+  // TEMPORARILY DISABLED FOR TESTING if non f(0) == 0 functions are appropriate.
   std::vector<double> m_log;
 
   // Coefficients for sin, A1*sin(B1*x) ...
   std::vector<double> m_sin;
   
   // Coefficients for cos, A1*cos(B1*x) ...
+  // TEMPORARILY DISABLED FOR TESTING if non f(0) == 0 functions are appropriate.
   std::vector<double> m_cos;
   
-  // Coefficients for exp, A1*exp(B1*x) ...
+  // Coefficients for exp, A1*exp(B1*x)-A1 ...
   std::vector<double> m_exp;
 };
 
@@ -60,7 +62,7 @@ struct Organism {
     Organism reproduce(const Organism& partner) const;
     
     // Holds the genetics of the organism.  We have NUM_STATE_VARS inputs of interest:
-    // the x and y zmps of the foot holding the load (left), and the z com.
+    // the x and y zmps of the foot holding the load (left), and the respective motor target position.
     // We have 8 outputs of interest (left and right shoulder pitch / roll, 
     // elbow yaw / roll.  So we have 8 varying equations (genetics) each with
     // NUM_STATE_VARS input variables, ie vector is size 8.
