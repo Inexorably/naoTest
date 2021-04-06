@@ -252,6 +252,64 @@ bool Organism::operator > (const Organism& rhs) const {
   return getFitness() > rhs.getFitness();
 }
 
+// Save the current organism to a file.
+void Organism::save(const std::string& filename) const {
+  // Open a file stream.
+  std::ofstream outfile;
+  outfile.open(filename);
+
+  outfile << "<organism>\n";
+  outfile << "\t<index>\n";
+  outfile << "\t\t0\n";
+  outfile << "\t<m_totalStableTime>\n";
+  outfile << "\t\t" << std::to_string(m_totalStableTime) << '\n';
+  outfile << "\t<m_numSimulations>\n";
+  outfile << "\t\t" << std::to_string(m_numSimulations) << '\n';
+
+  // Write each organisms m_genetics, of size NUM_OUTPUT_VARS.
+  outfile << "\t<m_genetics>\n";
+  
+  // Loop through the genetics of each organism.
+  for (Gene g : m_genetics) {
+    // Write the expressions of each gene.
+    outfile << "\t\t<m_expressions>\n";
+    
+    // Loop through the expressions and write the variable values.
+    // m_expressions is of size NUM_STATE_VARS.
+    for (Expression e : g.m_expressions) {
+      // Loop through and write m_poly coeffs
+      outfile << "\t\t\t<m_poly>\n";
+      for (double d : e.m_poly) {
+        outfile << "\t\t\t\t" << std::to_string(d) << '\n';
+      }
+      
+      // Loop through and write m_log coeffs
+      outfile << "\t\t\t<m_log>\n";
+      for (double d : e.m_log) {
+        outfile << "\t\t\t\t" << std::to_string(d) << '\n';
+      }
+      
+      // Loop through and write m_sin coeffs
+      outfile << "\t\t\t<m_sin>\n";
+      for (double d : e.m_sin) {
+        outfile << "\t\t\t\t" << std::to_string(d) << '\n';
+      }
+      
+      // Loop through and write m_cos coeffs
+      outfile << "\t\t\t<m_cos>\n";
+      for (double d : e.m_cos) {
+        outfile << "\t\t\t\t" << std::to_string(d) << '\n';
+      }
+      
+      // Loop through and write m_exp coeffs
+      outfile << "\t\t\t<m_exp>\n";
+      for (double d : e.m_exp) {
+        outfile << "\t\t\t\t" << std::to_string(d) << '\n';
+      }
+    }
+  }
+}
+
 ///////////////// Population /////////////////////////////////
 
 // Initialize a population with n random organisms.
@@ -261,9 +319,9 @@ Population::Population(const int& n) {
   }
 }
 
-// Sort the m_organisms vector using Organism::operator<.
+// Sort the m_organisms vector in descending order.
 void Population::sortOrganisms() {
-  std::sort(m_organisms.begin(), m_organisms.end());
+  std::sort(m_organisms.begin(), m_organisms.end(), std::greater <>());
 }
 
 // Breed the current population with 2 partners creating 1 child organism.
@@ -321,4 +379,79 @@ void Population::mutateOrganisms() {
 }
 
 // Saves the population to a given filename.
-void save(const std::string& filename) const;
+void Population::save(const std::string& filename) const {
+  // Open a file stream.
+  std::ofstream outfile;
+  outfile.open(filename);
+  
+  // Begin by writing population header information.
+  outfile << "<population>\n";
+  outfile << "\t<size>\n";
+  outfile <<"\t\t" << std::to_string(m_organisms.size()) << '\n';
+  outfile << "\t<NUM_STATE_VARS>\n";
+  outfile << "\t\t" << std::to_string(NUM_STATE_VARS) << '\n';
+  outfile << "\t<NUM_OUTPUT_VARS>\n";
+  outfile << "\t\t" << std::to_string(NUM_OUTPUT_VARS) << '\n';
+  
+  // Output each organism to the file.
+  for (unsigned int i = 0; i < m_organisms.size(); i++) {
+    outfile << "<organism>\n";
+    outfile << "\t<index>\n";
+    outfile << "\t\t" << std::to_string(i) << '\n';
+    outfile << "\t<m_totalStableTime>\n";
+    outfile << "\t\t" << std::to_string(m_organisms[i].m_totalStableTime) << '\n';
+    outfile << "\t<m_numSimulations>\n";
+    outfile << "\t\t" << std::to_string(m_organisms[i].m_numSimulations) << '\n';
+
+    // Write each organisms m_genetics, of size NUM_OUTPUT_VARS.
+    outfile << "\t<m_genetics>\n";
+    
+    // Loop through the genetics of each organism.
+    for (Gene g : m_organisms[i].m_genetics) {
+      // Write the expressions of each gene.
+      outfile << "\t\t<m_expressions>\n";
+      
+      // Loop through the expressions and write the variable values.
+      // m_expressions is of size NUM_STATE_VARS.
+      for (Expression e : g.m_expressions) {
+        // Loop through and write m_poly coeffs
+        outfile << "\t\t\t<m_poly>\n";
+        for (double d : e.m_poly) {
+          outfile << "\t\t\t\t" << std::to_string(d) << '\n';
+        }
+        
+        // Loop through and write m_log coeffs
+        outfile << "\t\t\t<m_log>\n";
+        for (double d : e.m_log) {
+          outfile << "\t\t\t\t" << std::to_string(d) << '\n';
+        }
+        
+        // Loop through and write m_sin coeffs
+        outfile << "\t\t\t<m_sin>\n";
+        for (double d : e.m_sin) {
+          outfile << "\t\t\t\t" << std::to_string(d) << '\n';
+        }
+        
+        // Loop through and write m_cos coeffs
+        outfile << "\t\t\t<m_cos>\n";
+        for (double d : e.m_cos) {
+          outfile << "\t\t\t\t" << std::to_string(d) << '\n';
+        }
+        
+        // Loop through and write m_exp coeffs
+        outfile << "\t\t\t<m_exp>\n";
+        for (double d : e.m_exp) {
+          outfile << "\t\t\t\t" << std::to_string(d) << '\n';
+        }
+      }
+    }
+  }
+  
+  // Close the ofstream.
+  outfile.close();
+}
+
+// Saves the population to the default filename DEFAULT_POPULATION_FILENAME.
+void Population::save() const {
+  save(DEFAULT_POPULATION_FILENAME);
+}

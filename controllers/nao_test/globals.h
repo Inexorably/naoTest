@@ -6,6 +6,9 @@
 // and we end the simulation.
 const double FOOT_FORCE_MIN = 40;
 
+// Max simulation time before breaking in seconds.
+const int SIMULATION_TIME_MAX = 60;
+
 // The number of generations of our population we iterate through.
 const int NUM_GENERATIONS = 100;
 
@@ -48,4 +51,9 @@ const int NUM_OUTPUT_VARS = 10;
 const double MUTATION_CHANCE = 1/static_cast<double>(NUM_STATE_VARS * NUM_OUTPUT_VARS);
 
 // Number of organisms in population.
-const int POPULATION_SIZE = 40;
+const int POPULATION_SIZE = 1000;
+
+/////////////////////////////////////// File constants ///////////////////////////////////////////////
+
+// Default population filename.
+const std::string DEFAULT_POPULATION_FILENAME = "pops/population.pop";

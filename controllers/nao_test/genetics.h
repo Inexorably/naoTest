@@ -9,6 +9,7 @@
 #include <iostream>
 #include <algorithm>
 #include <string>
+#include <fstream>
 
 #include "globals.h"
 #include "utilities.h"
@@ -86,6 +87,9 @@ struct Organism {
     // Compares by getFitness().
     bool operator < (const Organism& rhs) const;
     bool operator > (const Organism& rhs) const;
+    
+    // Save the current organism to a file.
+    void save(const std::string& filename) const;
 };
 
 
@@ -111,6 +115,10 @@ struct Population {
   // Saves the population to a given filename.
   void save(const std::string& filename) const;
   
+  // Saves the population to the default filename DEFAULT_POPULATION_FILENAME.
+  void save() const;
+  
   // Loads the population from a given file.
+  // TODO: Load validation such as confirming right population size etc.
   void load(const std::string& filename);
 };
