@@ -121,6 +121,10 @@ struct Population {
   // Saves the population to the default filename DEFAULT_POPULATION_FILENAME.
   void save() const;
   
+  // Loads the population from a given file.  If ignoreHistory is true, do not load the
+  // m_totalStableTime and m_numSimulation members from the file. 
+  void load(const std::string& filename, const bool& ignoreHistory);
+  
   // Loads the population from a given file.
   // TODO: Load validation such as confirming right population size etc.
   void load(const std::string& filename);

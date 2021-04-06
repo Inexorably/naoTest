@@ -467,9 +467,9 @@ void Population::save() const {
   save(DEFAULT_POPULATION_FILENAME);
 }
 
-// Loads the population from a given file.
-// TODO: Load validation such as confirming right population size etc.
-void Population::load(const std::string& filename) {
+// Loads the population from a given file.  If ignoreHistory is true, do not load the
+// m_totalStableTime and m_numSimulation members from the file. 
+void Population::load(const std::string& filename, const bool& ignoreHistory) {
   // Create the ifstream.
   std::ifstream infile(filename);
   
@@ -527,7 +527,11 @@ void Population::load(const std::string& filename) {
        std::getline(infile, line);
        line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
        line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
-       m_organisms[organismTicker].m_totalStableTime = std::stod(line);
+       
+       // If ignoreHistory is true, we don't load the totalStableTime value.
+       if (!ignoreHistory) {
+         m_organisms[organismTicker].m_totalStableTime = std::stod(line);
+       }
        //std::cout << line << ": recording total stable time" << std::endl;
        continue;
      }
@@ -539,7 +543,10 @@ void Population::load(const std::string& filename) {
        std::getline(infile, line);
        line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
        line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
-       m_organisms[organismTicker].m_numSimulations = std::stod(line);
+       // If ignoreHistory is true, we don't load the totalStableTime value.
+       if (!ignoreHistory) {
+         m_organisms[organismTicker].m_numSimulations = std::stod(line);
+       }
        //std::cout << line << ": recording num simulations" << std::endl;
        continue;
      }
@@ -701,6 +708,12 @@ void Population::load(const std::string& filename) {
       continue;
     }
   }
+}
+
+// Loads the population from a given file.
+// TODO: Load validation such as confirming right population size etc.
+void Population::load(const std::string& filename) {
+  load(filename, false);
 }
 
 // Loads the population from the default filename DEFAULT_POPULATION_FILENAME.
