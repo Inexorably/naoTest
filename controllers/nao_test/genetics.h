@@ -8,6 +8,7 @@
 #include <math.h>
 #include <iostream>
 #include <algorithm>
+#include <string>
 
 #include "globals.h"
 #include "utilities.h"
@@ -47,6 +48,10 @@ struct Gene {
   // Takes the current values of the state variables, and returns the output per m_expressions.
   // Note: currently hard coded to 3 state vars.
   double calculateValue(const double& x1, const double& x2, const double& x3) const;
+  
+  // Takes the current values of the state variables, and returns the output per m_expressions.
+  // Takes a vector of doubles of size NUM_STATE_VARS.
+  double calculateValue(const std::vector<double>& x) const;
 };
 
 
@@ -61,11 +66,10 @@ struct Organism {
     // Creates a child organism with the genetics of *this and partner organism.
     Organism reproduce(const Organism& partner) const;
     
-    // Holds the genetics of the organism.  We have NUM_STATE_VARS inputs of interest:
-    // the x and y zmps of the foot holding the load (left), and the respective motor target position.
-    // We have 8 outputs of interest (left and right shoulder pitch / roll, 
-    // elbow yaw / roll.  So we have 8 varying equations (genetics) each with
-    // NUM_STATE_VARS input variables, ie vector is size 8.
+    // Holds the genetics of the organism.  We have NUM_STATE_VARS inputs of interest.
+    // We have NUM_OUTPUT_VARS outputs of interest.
+    // So we have NUM_OUTPUT_VARS varying equations (genetics) each with
+    // NUM_STATE_VARS input variables, ie vector is size NUM_OUTPUT_VARS.
     std::vector<Gene> m_genetics;
     
     // The fitness of the organism (determined by average time before falling in simulation).
@@ -95,4 +99,18 @@ struct Population {
   
   // Sort the m_organisms vector using Organism::operator<.
   void sortOrganisms();
+  
+  // Breed the current population with 2 partners creating 1 child organism and add the children to
+  // m_organisms.  Increases size of m_organisms by 50%.
+  void reproduceOrganisms();
+  
+  // Copy and mutate random members until m_organsisms.size() + number of mutated members == POPULATION_SIZE.
+  // Then, append the mutated members to m_organsisms.
+  void mutateOrganisms();
+  
+  // Saves the population to a given filename.
+  void save(const std::string& filename) const;
+  
+  // Loads the population from a given file.
+  void load(const std::string& filename);
 };

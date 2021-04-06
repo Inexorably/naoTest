@@ -1,0 +1,31 @@
+<population>
+	<size>
+		1000
+<organism>
+	<m_totalStableTime>
+		2.35
+	<m_numSimulations>
+		2
+	<m_genetics>			// size NUM_OUTPUT_VARS
+		<m_expressions>		// size NUM_STATE_VARS
+			<m_poly>	// variable size
+				2.5
+				-2.532
+				1.337
+			<m_log>
+				... same etc
+<organism>
+	<m_totalStableTime>
+		2.35
+	<m_numSimulations>
+		2
+	<m_genetics>			// size NUM_OUTPUT_VARS
+		<m_expressions>		// size NUM_STATE_VARS
+			<m_poly>	// variable size
+				2.5
+				-2.532
+				1.337
+			<m_log>
+				... same etc
+
+
