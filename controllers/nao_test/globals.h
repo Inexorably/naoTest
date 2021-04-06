@@ -5,7 +5,12 @@
 // If the total grf / force feet supporting drops below FOOT_FORCE_MIN, the robot has fallen over
 // and we end the simulation.
 const double FOOT_FORCE_MIN = 40;
+
+// The number of generations of our population we iterate through.
 const int NUM_GENERATIONS = 100;
+
+// The number of steps between each control attempt.  Higher values allow less noise but slower response.
+const int STEPS_PER_CONTROL = 4;
 
 /////////////////////////////////////// NAO physical properties //////////////////////////////////////////
 
@@ -34,13 +39,13 @@ const int EXPRESSION_CONST_EXP_MAX = 5;
 const int EXPRESSION_CONST_EXP_MIN = 0;
 
 // Number of state variables.
-const int NUM_STATE_VARS = 3;
+const int NUM_STATE_VARS = 6;
 
 // Number of output vars.
-const int NUM_OUTPUT_VARS = 8;
+const int NUM_OUTPUT_VARS = 10;
 
 // Mutation probability between 0 to 1.
 const double MUTATION_CHANCE = 1/static_cast<double>(NUM_STATE_VARS * NUM_OUTPUT_VARS);
 
 // Number of organisms in population.
-const int POPULATION_SIZE = 1000;
+const int POPULATION_SIZE = 40;

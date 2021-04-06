@@ -81,9 +81,6 @@ int main(int argc, char **argv) {
   Motor *LElbowYaw = robot->getMotor("LElbowYaw");
   Motor *LElbowRoll = robot->getMotor("LElbowRoll");
   
-  // For iterating through:
-  Motor *upperBodyMotors[8] = {RShoulderPitch, RShoulderRoll, RElbowYaw, RElbowRoll, LShoulderPitch, LShoulderRoll, LElbowYaw, LElbowRoll};
-  
   //Lower body.
   Motor *RHipYawPitch = robot->getMotor("RHipYawPitch");
   Motor *RHipRoll = robot->getMotor("RHipRoll");
@@ -97,6 +94,9 @@ int main(int argc, char **argv) {
   Motor *LKneePitch = robot->getMotor("LKneePitch");
   Motor *LAnklePitch = robot->getMotor("LAnklePitch");
   Motor *LAnkleRoll = robot->getMotor("LAnkleRoll");
+  
+  // For iterating through:
+  Motor *controlMotors[10] = {RShoulderPitch, RShoulderRoll, RElbowYaw, RElbowRoll, LShoulderPitch, LShoulderRoll, LElbowYaw, LElbowRoll, LHipRoll, LAnkleRoll};
 
   //Misc sensors
   Camera *cameraTop = robot->getCamera("CameraTop");
@@ -116,8 +116,20 @@ int main(int argc, char **argv) {
   // For debugging purposes, output the best current stable time.
   double bestStableTime = 0;
   
+  // Track the zmp derivatives every STEPS_PER_CONTROL steps to use as additional control inputs.
+  // Assume starting from rest.
+  int zmplx_prev = 0;
+  int zmply_prev = 0;
+  int zmplxdt = 0;
+  int zmplydt = 0;
+  int zmplxdt_prev = 0;
+  int zmplydt_prev = 0;
+  int zmplxd2t = 0;
+  int zmplyd2t = 0;
+  
   // Iterate through each generation and evolve.
   for (int i = 0; i < NUM_GENERATIONS; i++) {
+    std::cout << "Entering generation " << i << std::endl;
     
     // For each organism in the population, run the simulation in order to generate fitness values.
     for (Organism& o : p.m_organisms) {
@@ -133,19 +145,35 @@ int main(int argc, char **argv) {
         // Don't attempt to control every step.  Waiting more steps can reduce noise.
         static int ticker = 0;
         ticker++;
-        if (ticker > 4) {
-          for (int j = 0; j < NUM_OUTPUT_VARS; j++) {
-            // Get the inputs (zmpx, zmpy, respective motor target position).
-            // We are moving the right foot, so we are interested in the zmps of the left foot.
-            // The left foot zmps is the first element returned by getZMPCoordinates.
-            auto zmps = getZMPCoordinates(fsrL, fsrR);
-            double zmplx = zmps[0].m_x;
-            double zmply = zmps[0].m_y;
+        if (ticker > STEPS_PER_CONTROL) {
+          // Get the inputs (zmpx, zmpy, respective motor target position).
+          // We are moving the right foot, so we are interested in the zmps of the left foot.
+          // The left foot zmps is the first element returned by getZMPCoordinates.
+          auto zmps = getZMPCoordinates(fsrL, fsrR);
+          double zmplx = zmps[0].m_x;
+          double zmply = zmps[0].m_y;
+          
+          // Check the derivatives of the zmps.
+          zmplxdt = (zmplx - zmplx_prev) / (timeStep * STEPS_PER_CONTROL);
+          zmplydt = (zmply - zmply_prev) / (timeStep * STEPS_PER_CONTROL);
+          zmplxd2t = (zmplxdt - zmplxdt_prev) / (timeStep * STEPS_PER_CONTROL);
+          zmplyd2t = (zmplydt - zmplydt_prev) / (timeStep * STEPS_PER_CONTROL);
+          
+          // Put the control inputs into a vector to pass to the control function.
+          std::vector<double> x = {zmplx, zmply, zmplxdt, zmplydt, zmplxd2t, zmplyd2t};
             
+          // Generate each output variable based on the input (ie, loop through the system of equations).
+          for (int j = 0; j < NUM_OUTPUT_VARS; j++) {
             // Find the respective motor input position and clamp it to the min:max bounds of that motor.
-            double input = o.m_genetics[j].calculateValue(zmplx, zmply, 0);
-            input = clamp(input, upperBodyMotors[j]->getMinPosition(), upperBodyMotors[j]->getMaxPosition());   
-            upperBodyMotors[j]->setPosition(input);
+            double input = o.m_genetics[j].calculateValue(x);
+            input = clamp(input, controlMotors[j]->getMinPosition(), controlMotors[j]->getMaxPosition());   
+            controlMotors[j]->setPosition(input);
+            
+            // Set the current zmp values as the previous values so we can calculate derivatives in the next step.
+            zmplx_prev = zmplx;
+            zmply_prev = zmply;
+            zmplxdt_prev = zmplxdt;
+            zmplydt_prev = zmplydt;
           }
           ticker = 0;
         }
@@ -176,14 +204,20 @@ int main(int argc, char **argv) {
     
     // Each organism in this generation of the population has been simulated now.
     // We sort by the fitness score.
+    p.sortOrganisms();
     
     // Save best performing half of population (POPULATION_SIZE/2).
+    p.m_organisms.erase(p.m_organisms.begin() + POPULATION_SIZE/2, p.m_organisms.end());
     
     // Breed the best performing half of the population (POPULATION_SIZE/2/2 == POPULATION_SIZE/4).
+    p.reproduceOrganisms();
     
     // Make copies of random members of the previous generation and children, 
     // mutate them, and add them to population.
     // Adds another POPULATION_SIZE/4, and restores our population to POPULATION_SIZE.
+    p.mutateOrganisms();
+    
+    // Save the population to a file or update the active file.
   }
   
   // Enter here exit cleanup code.
