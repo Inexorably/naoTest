@@ -98,6 +98,9 @@ struct Population {
   // Initialize a population with n random organisms.
   Population(const int& n);
   
+  // Create a population with POPULATION_SIZE random organisms.
+  Population();
+  
   // This will be kept in descending order.  > operator for organism will be defined.
   std::vector<Organism> m_organisms;
   
@@ -121,4 +124,7 @@ struct Population {
   // Loads the population from a given file.
   // TODO: Load validation such as confirming right population size etc.
   void load(const std::string& filename);
+  
+  // Loads the population from the default filename DEFAULT_POPULATION_FILENAME.
+  void load();
 };

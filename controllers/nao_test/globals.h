@@ -22,9 +22,14 @@ const double FOOT_LENGTH = 0.16;
 
 /////////////////////////////////////// Random motion / plant ////////////////////////////////////////////
 
-// For lower body motion, new target positions will be within x +- [0:1]*x*LAMBDA of current position.
+// Modifier for delta position target in motion plant.
 // Motors are servos, so target position is in rads.
-const double LAMBDA = 0.01;
+const double LAMBDA = 0.02;
+
+// Have slightly different frequency coefficients for each motor to introduce more motion variance.
+// Note: this must be of length NUM_OUTPUT_VARS.
+// TODO: Add verification check on OMEGA.
+const std::vector<double> OMEGA = {1.00, 1.05, 1.10, 1.15, 1.20, 1.25, 1.30, 1.35, 1.40, 1.45, 1.50};
 
 /////////////////////////////////////// Genetics constants ///////////////////////////////////////////////
 
@@ -57,3 +62,38 @@ const int POPULATION_SIZE = 1000;
 
 // Default population filename.
 const std::string DEFAULT_POPULATION_FILENAME = "pops/population.pop";
+
+// XML-ish blocks for parsing files.
+const std::string FILE_BLOCK_POPULATION = "<population>\n";
+const std::string FILE_BLOCK_POPULATION_SIZE = "\t<size>\n";
+const std::string FILE_BLOCK_NUM_STATE_VARS = "\t<NUM_STATE_VARS>\n";
+const std::string FILE_BLOCK_NUM_OUTPUT_VARS = "\t<NUM_OUTPUT_VARS>\n";
+const std::string FILE_BLOCK_ORGANISM = "<organism>\n";
+const std::string FILE_BLOCK_INDEX = "\t<index>\n";
+const std::string FILE_BLOCK_TOTAL_STABLE_TIME = "\t<m_totalStableTime>\n";
+const std::string FILE_BLOCK_NUM_SIMULATIONS = "\t<m_numSimulations>\n";
+const std::string FILE_BLOCK_GENETICS = "\t<m_genetics>\n";
+const std::string FILE_BLOCK_EXPRESSIONS = "\t\t<m_expressions>\n";
+const std::string FILE_BLOCK_POLY = "\t\t\t<m_poly>\n";
+const std::string FILE_BLOCK_LOG = "\t\t\t<m_log>\n";
+const std::string FILE_BLOCK_SIN = "\t\t\t<m_sin>\n";
+const std::string FILE_BLOCK_COS = "\t\t\t<m_cos>\n";
+const std::string FILE_BLOCK_EXP = "\t\t\t<m_exp>\n";
+
+// Delimitter stripped versions of the above due to getline etc stripping \n when we want to use for
+// comparisons.
+const std::string FILE_BLOCK_POPULATION_STRIPPPED = "<population>";
+const std::string FILE_BLOCK_POPULATION_SIZE_STRIPPPED = "\t<size>";
+const std::string FILE_BLOCK_NUM_STATE_VARS_STRIPPPED = "\t<NUM_STATE_VARS>";
+const std::string FILE_BLOCK_NUM_OUTPUT_VARS_STRIPPPED = "\t<NUM_OUTPUT_VARS>";
+const std::string FILE_BLOCK_ORGANISM_STRIPPPED = "<organism>";
+const std::string FILE_BLOCK_INDEX_STRIPPPED = "\t<index>";
+const std::string FILE_BLOCK_TOTAL_STABLE_TIME_STRIPPPED = "\t<m_totalStableTime>";
+const std::string FILE_BLOCK_NUM_SIMULATIONS_STRIPPPED = "\t<m_numSimulations>";
+const std::string FILE_BLOCK_GENETICS_STRIPPPED = "\t<m_genetics>";
+const std::string FILE_BLOCK_EXPRESSIONS_STRIPPPED = "\t\t<m_expressions>";
+const std::string FILE_BLOCK_POLY_STRIPPPED = "\t\t\t<m_poly>";
+const std::string FILE_BLOCK_LOG_STRIPPPED = "\t\t\t<m_log>";
+const std::string FILE_BLOCK_SIN_STRIPPPED = "\t\t\t<m_sin>";
+const std::string FILE_BLOCK_COS_STRIPPPED = "\t\t\t<m_cos>";
+const std::string FILE_BLOCK_EXP_STRIPPPED = "\t\t\t<m_exp>";

@@ -237,6 +237,10 @@ Organism Organism::reproduce(const Organism& partner) const {
 // The fitness of the organism (determined by average time before falling in simulation).
 // Returns m_totalStableTime/m_numSimulations (the average stable time).
 double Organism::getFitness() const {
+  // Returns -1 if num_simulations == 0.
+  if (m_numSimulations == 0) { // More representative of concept than implictly casting as bool.
+    return -1;
+  }
   return m_totalStableTime/m_numSimulations;
 }
 
@@ -258,51 +262,51 @@ void Organism::save(const std::string& filename) const {
   std::ofstream outfile;
   outfile.open(filename);
 
-  outfile << "<organism>\n";
-  outfile << "\t<index>\n";
-  outfile << "\t\t0\n";
-  outfile << "\t<m_totalStableTime>\n";
+  outfile << FILE_BLOCK_ORGANISM;
+  outfile << FILE_BLOCK_INDEX;
+  outfile << "\t\t" << std::to_string(0) << '\n';
+  outfile << FILE_BLOCK_TOTAL_STABLE_TIME;
   outfile << "\t\t" << std::to_string(m_totalStableTime) << '\n';
-  outfile << "\t<m_numSimulations>\n";
+  outfile << FILE_BLOCK_NUM_SIMULATIONS;
   outfile << "\t\t" << std::to_string(m_numSimulations) << '\n';
 
   // Write each organisms m_genetics, of size NUM_OUTPUT_VARS.
-  outfile << "\t<m_genetics>\n";
-  
+  outfile << FILE_BLOCK_GENETICS;
+    
   // Loop through the genetics of each organism.
   for (Gene g : m_genetics) {
     // Write the expressions of each gene.
-    outfile << "\t\t<m_expressions>\n";
+    outfile << FILE_BLOCK_EXPRESSIONS;
     
     // Loop through the expressions and write the variable values.
     // m_expressions is of size NUM_STATE_VARS.
     for (Expression e : g.m_expressions) {
       // Loop through and write m_poly coeffs
-      outfile << "\t\t\t<m_poly>\n";
+      outfile << FILE_BLOCK_POLY;
       for (double d : e.m_poly) {
         outfile << "\t\t\t\t" << std::to_string(d) << '\n';
       }
       
       // Loop through and write m_log coeffs
-      outfile << "\t\t\t<m_log>\n";
+      outfile << FILE_BLOCK_LOG;
       for (double d : e.m_log) {
         outfile << "\t\t\t\t" << std::to_string(d) << '\n';
       }
       
       // Loop through and write m_sin coeffs
-      outfile << "\t\t\t<m_sin>\n";
+      outfile << FILE_BLOCK_SIN;
       for (double d : e.m_sin) {
         outfile << "\t\t\t\t" << std::to_string(d) << '\n';
       }
       
       // Loop through and write m_cos coeffs
-      outfile << "\t\t\t<m_cos>\n";
+      outfile << FILE_BLOCK_COS;
       for (double d : e.m_cos) {
         outfile << "\t\t\t\t" << std::to_string(d) << '\n';
       }
       
       // Loop through and write m_exp coeffs
-      outfile << "\t\t\t<m_exp>\n";
+      outfile << FILE_BLOCK_EXP;
       for (double d : e.m_exp) {
         outfile << "\t\t\t\t" << std::to_string(d) << '\n';
       }
@@ -315,6 +319,13 @@ void Organism::save(const std::string& filename) const {
 // Initialize a population with n random organisms.
 Population::Population(const int& n) {
   for (int i = 0; i < n; i++) {
+    m_organisms.push_back(Organism());
+  }
+}
+
+// Create a population with POPULATION_SIZE random organisms.
+Population::Population() {
+  for (int i = 0; i < POPULATION_SIZE; i++) {
     m_organisms.push_back(Organism());
   }
 }
@@ -385,61 +396,61 @@ void Population::save(const std::string& filename) const {
   outfile.open(filename);
   
   // Begin by writing population header information.
-  outfile << "<population>\n";
-  outfile << "\t<size>\n";
+  outfile << FILE_BLOCK_POPULATION;
+  outfile << FILE_BLOCK_POPULATION_SIZE;
   outfile <<"\t\t" << std::to_string(m_organisms.size()) << '\n';
-  outfile << "\t<NUM_STATE_VARS>\n";
+  outfile << FILE_BLOCK_NUM_STATE_VARS;
   outfile << "\t\t" << std::to_string(NUM_STATE_VARS) << '\n';
-  outfile << "\t<NUM_OUTPUT_VARS>\n";
+  outfile << FILE_BLOCK_NUM_OUTPUT_VARS;
   outfile << "\t\t" << std::to_string(NUM_OUTPUT_VARS) << '\n';
   
   // Output each organism to the file.
   for (unsigned int i = 0; i < m_organisms.size(); i++) {
-    outfile << "<organism>\n";
-    outfile << "\t<index>\n";
+    outfile << FILE_BLOCK_ORGANISM;
+    outfile << FILE_BLOCK_INDEX;
     outfile << "\t\t" << std::to_string(i) << '\n';
-    outfile << "\t<m_totalStableTime>\n";
+    outfile << FILE_BLOCK_TOTAL_STABLE_TIME;
     outfile << "\t\t" << std::to_string(m_organisms[i].m_totalStableTime) << '\n';
-    outfile << "\t<m_numSimulations>\n";
+    outfile << FILE_BLOCK_NUM_SIMULATIONS;
     outfile << "\t\t" << std::to_string(m_organisms[i].m_numSimulations) << '\n';
 
     // Write each organisms m_genetics, of size NUM_OUTPUT_VARS.
-    outfile << "\t<m_genetics>\n";
+    outfile << FILE_BLOCK_GENETICS;
     
     // Loop through the genetics of each organism.
     for (Gene g : m_organisms[i].m_genetics) {
       // Write the expressions of each gene.
-      outfile << "\t\t<m_expressions>\n";
+      outfile << FILE_BLOCK_EXPRESSIONS;
       
       // Loop through the expressions and write the variable values.
       // m_expressions is of size NUM_STATE_VARS.
       for (Expression e : g.m_expressions) {
         // Loop through and write m_poly coeffs
-        outfile << "\t\t\t<m_poly>\n";
+        outfile << FILE_BLOCK_POLY;
         for (double d : e.m_poly) {
           outfile << "\t\t\t\t" << std::to_string(d) << '\n';
         }
         
         // Loop through and write m_log coeffs
-        outfile << "\t\t\t<m_log>\n";
+        outfile << FILE_BLOCK_LOG;
         for (double d : e.m_log) {
           outfile << "\t\t\t\t" << std::to_string(d) << '\n';
         }
         
         // Loop through and write m_sin coeffs
-        outfile << "\t\t\t<m_sin>\n";
+        outfile << FILE_BLOCK_SIN;
         for (double d : e.m_sin) {
           outfile << "\t\t\t\t" << std::to_string(d) << '\n';
         }
         
         // Loop through and write m_cos coeffs
-        outfile << "\t\t\t<m_cos>\n";
+        outfile << FILE_BLOCK_COS;
         for (double d : e.m_cos) {
           outfile << "\t\t\t\t" << std::to_string(d) << '\n';
         }
         
         // Loop through and write m_exp coeffs
-        outfile << "\t\t\t<m_exp>\n";
+        outfile << FILE_BLOCK_EXP;
         for (double d : e.m_exp) {
           outfile << "\t\t\t\t" << std::to_string(d) << '\n';
         }
@@ -454,4 +465,245 @@ void Population::save(const std::string& filename) const {
 // Saves the population to the default filename DEFAULT_POPULATION_FILENAME.
 void Population::save() const {
   save(DEFAULT_POPULATION_FILENAME);
+}
+
+// Loads the population from a given file.
+// TODO: Load validation such as confirming right population size etc.
+void Population::load(const std::string& filename) {
+  // Create the ifstream.
+  std::ifstream infile(filename);
+  
+  // Skip the fixed header information.
+  std::string line;
+  std::getline(infile, line);        // <population>
+  std::getline(infile, line);        // <size>
+  std::getline(infile, line);        // 1000
+  std::getline(infile, line);        // <NUM_STATE_VARS>
+  std::getline(infile, line);        // 6
+  std::getline(infile, line);        // <NUM_OUTPUT_VARS>
+  std::getline(infile, line);        // 10
+  
+  // organismTicker is the index of the current organism we are working on.  When we
+  // encounter a <organism> line, we increment this ticker.  Thus, we start at -1 as
+  // we will encounter such a line immediately for the organism at 0 index.
+  int organismTicker = -1;
+  
+  // The index of the working gene.
+  // When we encounter an <m_expressions> line, we increment this.  When we switch to
+  // the next organism (ie organismTicker increments) we re-set this to -1.
+  // We start at -1 as we increment when we first encounter m_expressions, and the first
+  // index should be 0.
+  int geneTicker = -1;
+  
+  // See organismTicker and geneTicker comments.
+  int expressionTicker = -1;
+  
+  // Iterate through each organism and add.
+  for (; std::getline(infile, line); ) {
+    // If we are encountering a new organism object, increment the index of the organism
+    // in *this.m_organisms that we are working on.  We also reset geneTicker and expressionTicker.
+    if (line == FILE_BLOCK_ORGANISM_STRIPPPED) {
+      organismTicker++;
+      //std::cout << line << ": incrementing organismTicker: " << organismTicker << std::endl;
+      geneTicker = -1;
+      expressionTicker = -1;
+      continue;
+    }
+    
+    // The index is for people manually reading the file and referencing organisms, so we don't care about it.
+    // Index is already equal to organismTicker.
+    if (line == FILE_BLOCK_INDEX_STRIPPPED) {
+      //std::cout << line << ": skipping next line" << std::endl;
+      // We aren't interested in the index, so get it and then continue so that we skip the value.
+      std::getline(infile, line);
+      //std::cout << line << ": did not record this" << std::endl;
+      continue;
+    }
+    
+     // Get and set m_totalStableTime.
+     if (line == FILE_BLOCK_TOTAL_STABLE_TIME_STRIPPPED) {
+       // Get the value contained in the next line, strip the \t and \n chars,
+       // and set the m_totalStableTime value.
+       std::getline(infile, line);
+       line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+       line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+       m_organisms[organismTicker].m_totalStableTime = std::stod(line);
+       //std::cout << line << ": recording total stable time" << std::endl;
+       continue;
+     }
+     
+     // Get and set m_numSimulations.
+     if (line == FILE_BLOCK_NUM_SIMULATIONS_STRIPPPED) {
+       // Get the value contained in the next line, strip the \t and \n chars,
+       // and set the m_totalStableTime value.
+       std::getline(infile, line);
+       line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+       line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+       m_organisms[organismTicker].m_numSimulations = std::stod(line);
+       //std::cout << line << ": recording num simulations" << std::endl;
+       continue;
+     }
+     
+     // If detect m_genetics block we just continue to next line.
+     if (line == FILE_BLOCK_GENETICS_STRIPPPED) {
+       //std::cout << line << ": continuing" << std::endl;
+       continue;
+     }
+     
+     // If we detect an m_expressions block, we increment the gene index and reset the expression index.
+     if (line == FILE_BLOCK_EXPRESSIONS_STRIPPPED) {
+       geneTicker++;
+       expressionTicker = -1;
+       //std::cout << line << ": incrementing geneTicker: " << geneTicker;
+       //std::cout << ", resetting expressionTicker: " << expressionTicker << std::endl;
+       continue;
+     }
+     
+     // Since the expression members have multiple members due to multiple state variables,
+     // we need to handle an m_poly block being in the 'line' string at the bottom of the main loop.
+     // Thus, we cannot simply use continue; as otherwise the getline at the top of the mainloop will
+     // overwrite this.  So, we loop through the expressions until the final line is not a
+     // m_poly block.
+     while (line == FILE_BLOCK_POLY_STRIPPPED) {
+     
+       // If we detect a m_poly block, we clear the respective vector and fill it with values
+       // until we encounter a non number line.
+       // The m_poly block is the first subexpression block that we will encounter.
+       // Thus, we increment the expressionTicker when we do so.
+       if (line == FILE_BLOCK_POLY_STRIPPPED) {  // Redundant in while loop but kept to keep style consistent with other expression blocks.
+         expressionTicker++;
+         //std::cout << line << ": incrementing expressionTicker: " << expressionTicker << std::endl;
+         
+         // Clear the current m_poly vector so that we can fill it with the values being read.
+         m_organisms[organismTicker].m_genetics[geneTicker].m_expressions[expressionTicker].m_poly.clear();
+         
+         // Loop through the lines until we encounter the m_log block which follows.       
+         while (std::getline(infile, line) && line != FILE_BLOCK_LOG_STRIPPPED) {
+           // Clean line and push it back onto the expression vector.
+           line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+           line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+           m_organisms[organismTicker].m_genetics[geneTicker].m_expressions[expressionTicker].m_poly.push_back(std::stod(line));
+           //std::cout << line << ": pushed back onto m_poly vector." << std::endl;
+         }
+         // Note that we don't continue here, as we already have the next expression block in line.
+       }
+       
+       // If we detect a m_log block, we clear the respective vector and fill it with values
+       // until we encounter a non number line.
+       if (line == FILE_BLOCK_LOG_STRIPPPED) {
+         //std::cout << line << std::endl;
+         
+         // Clear the current m_log vector so that we can fill it with the values being read.
+         m_organisms[organismTicker].m_genetics[geneTicker].m_expressions[expressionTicker].m_log.clear();
+         
+         // Loop through the lines until we encounter the m_log block which follows.       
+         while (std::getline(infile, line) && line != FILE_BLOCK_SIN_STRIPPPED) {
+           // Clean line and push it back onto the expression vector.
+           line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+           line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+           m_organisms[organismTicker].m_genetics[geneTicker].m_expressions[expressionTicker].m_log.push_back(std::stod(line));
+           //std::cout << line << ": pushed back onto m_log vector." << std::endl;
+         }
+         // Note that we don't continue here, as we already have the next expression block in line.
+       }
+       
+       // If we detect a m_sin block, we clear the respective vector and fill it with values
+       // until we encounter a non number line.
+       // The m_sin block is the first subexpression block that we will encounter.
+       // Thus, we increment the expressionTicker when we do so.
+       if (line == FILE_BLOCK_SIN_STRIPPPED) {
+         //std::cout << line << std::endl;
+         
+         // Clear the current m_sin vector so that we can fill it with the values being read.
+         m_organisms[organismTicker].m_genetics[geneTicker].m_expressions[expressionTicker].m_sin.clear();
+         
+         // Loop through the lines until we encounter the m_sin block which follows.       
+         while (std::getline(infile, line) && line != FILE_BLOCK_COS_STRIPPPED) {
+           // Clean line and push it back onto the expression vector.
+           line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+           line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+           m_organisms[organismTicker].m_genetics[geneTicker].m_expressions[expressionTicker].m_sin.push_back(std::stod(line));
+           //std::cout << line << ": pushed back onto m_sin vector." << std::endl;
+         }
+         // Note that we don't continue here, as we already have the next expression block in line.
+       }    
+     
+       // If we detect a m_cos block, we clear the respective vector and fill it with values
+       // until we encounter a non number line.
+       if (line == FILE_BLOCK_COS_STRIPPPED) {
+         //std::cout << line << std::endl;
+         
+         // Clear the current m_cos vector so that we can fill it with the values being read.
+         m_organisms[organismTicker].m_genetics[geneTicker].m_expressions[expressionTicker].m_cos.clear();
+         
+         // Loop through the lines until we encounter the m_cos block which follows.       
+         while (std::getline(infile, line) && line != FILE_BLOCK_EXP_STRIPPPED) {
+           // Clean line and push it back onto the expression vector.
+           line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+           line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+           m_organisms[organismTicker].m_genetics[geneTicker].m_expressions[expressionTicker].m_cos.push_back(std::stod(line));
+           //std::cout << line << ": pushed back onto m_cos vector." << std::endl;
+         }
+         // Note that we don't continue here, as we already have the next expression block in line.
+       }
+    
+       // If we detect a m_exp block, we clear the respective vector and fill it with values
+       // until we encounter a non number line.
+       if (line == FILE_BLOCK_EXP_STRIPPPED) {
+         //std::cout << line << std::endl;
+         
+         // Clear the current m_exp vector so that we can fill it with the values being read.
+         m_organisms[organismTicker].m_genetics[geneTicker].m_expressions[expressionTicker].m_exp.clear();
+         
+         // Unlike for the previous expressions, there are three blocks we can
+         // encounter that we neeed to handle.  We can either encounter a new <m_expression> block,
+         // or we can encounter a new <organism> block.  We handle those cases after this if statement,
+         // once again without calling continue, as we cannot go backward when using std::getline().
+         // We can also encounter a new <m_log> block.
+         while (std::getline(infile, line) && line != FILE_BLOCK_EXPRESSIONS_STRIPPPED && line != FILE_BLOCK_ORGANISM_STRIPPPED && line != FILE_BLOCK_POLY_STRIPPPED) {
+           // Clean line and push it back onto the expression vector.
+           line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+           line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+           m_organisms[organismTicker].m_genetics[geneTicker].m_expressions[expressionTicker].m_exp.push_back(std::stod(line));
+           //std::cout << line << ": pushed back onto m_exp vector." << std::endl;
+         }
+         // Note that we don't continue here, as we already have the next expression block in line.
+      }
+      
+      // If we get here, line must be the poly block, in which case the loop will increment
+      // and we will begin storing the next expression members.  Thus, we don't need to write
+      // any code here.
+    }
+    
+    // As per our previous comments in the while loop of the exp block, we need to handle the
+    // <organism> and <m_expression> block cases without going to the next loop iteration, as otherwise
+    // getline will be called at the start of the loop iteration and will overwrite line before we can handle
+    // it appropriately.  If line is neither, it should be a poly block, and we continue the subloop after
+    // incrementing expressionTicker.
+     
+    // If line is an expression block, increment the geneTicker and continue.
+    if (line == FILE_BLOCK_EXPRESSIONS_STRIPPPED) {
+      geneTicker++;
+      expressionTicker = -1;
+      //std::cout << line << ": incrementing geneTicker: " << geneTicker << std::endl;
+      //std::cout << ", resetting expressionTicker: " << expressionTicker << std::endl;
+      continue;
+    }
+     
+    // Else if the line is an organism block:
+    // If we are encountering a new organism object, increment the index of the organism
+    // in *this.m_organisms that we are working on.  We also reset geneTicker and expressionTicker.
+    if (line == FILE_BLOCK_ORGANISM_STRIPPPED) {
+      organismTicker++;
+      //std::cout << line << ": incrementing organismTicker: " << organismTicker << std::endl;
+      geneTicker = -1;
+      expressionTicker = -1;
+      continue;
+    }
+  }
+}
+
+// Loads the population from the default filename DEFAULT_POPULATION_FILENAME.
+void Population::load() {
+  load(DEFAULT_POPULATION_FILENAME);
 }
