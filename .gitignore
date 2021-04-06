@@ -2,3 +2,4 @@
 *.o
 *.d
 *.exe
+controllers/nao_test/pops/star.organism
