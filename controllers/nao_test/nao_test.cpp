@@ -35,14 +35,10 @@ static int cleanUp(Supervisor *supervisor) {
   return 0;
 }
 
-// This is the main program of your controller.
-// It creates an instance of your Robot instance, launches its
-// function(s) and destroys it at the end of the execution.
-// Note that only one instance of Robot should be created in
-// a controller program.
-// The arguments of the main function can be specified by the
-// "controllerArgs" field of the Robot node
-int main(int argc, char **argv) {
+
+// Creates a population and evolves the population of organisms through breeding / mutation.
+// Constants are set in globals.h.
+int runEvolutions(int argc, char **argv) {
   //////////////////////////////////////////////////////////////////////////
   
   // Initializing robot.
@@ -111,7 +107,11 @@ int main(int argc, char **argv) {
   //////////////////////////////////////////////////////////////////////////
   
   // Generate an organism population of controllers.
-  Population p(POPULATION_SIZE);
+  Population p;
+  
+  // Load p from the default file.  If no such file exists or file is corrupted,
+  // the random p created upon construction will not be changed.
+  p.load();
   
   // For debugging purposes, output the best current stable time.
   double bestStableTime = 0;
@@ -244,8 +244,14 @@ int main(int argc, char **argv) {
     p.save();
   }
   
-  // Enter here exit cleanup code.
-
+  // Clean up and return.
   delete robot;
   return 1;
+}
+
+int main(int argc, char **argv) {
+  // Evolve the controllers.  
+  runEvolutions(argc, argv);
+  
+  return 2;
 }

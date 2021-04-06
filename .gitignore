@@ -6,3 +6,4 @@ controllers/nao_test/pops/star.organism
 controllers/nao_test/targetfilestructure.txt
 *.pop
 *.organism
+*.txt

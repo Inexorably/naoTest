@@ -10,7 +10,6 @@ void moveRightLeg(const double t, Motor *RHipYawPitch, Motor *RHipRoll, Motor *R
     return;
   }
 
-
   // Generate a random number for movement.
   std::random_device rd;
   std::mt19937 mt(rd());
@@ -26,12 +25,14 @@ void moveRightLeg(const double t, Motor *RHipYawPitch, Motor *RHipRoll, Motor *R
   rightLegMotors.push_back(RAnkleRoll);
    
   // For each motor, choose some random position target that is within x +- x*LAMBDA of the current position.
+  int i = 0;    // Index for OMEGA frequency modifier.  We do this to increase motion variation.
   for (auto m : rightLegMotors) {
     // Get the current target position.
     double targ = m->getTargetPosition();
     
     // Randomly modify the target position to targ +- [-1:1]*targ*LAMBDA.
-    double delta = sin(t/3)*dist(mt)*LAMBDA;
+    double delta = sin(OMEGA[i]*t/1.5)*dist(mt)*LAMBDA;
+    i++;       // Increment the index for the OMEGA frequency modifier.
     
     // Make it progressively harder as t increases.  At 20 seconds, target changes double.
     // By 40 seconds, target changes 5x in magnitude.
