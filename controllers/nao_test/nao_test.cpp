@@ -218,6 +218,11 @@ int main(int argc, char **argv) {
     // We sort by the fitness score.
     p.sortOrganisms();
     
+    // Save this generation for possible plotting purposes.
+    std::cout << "Saving to historic generation population file at pops/generation_" << i << ".pop\n";
+    std::string generationFilename = "pops/generation_" + std::to_string(i) + ".pop";
+    p.save(generationFilename);
+    
     // Save best performing half of population (POPULATION_SIZE/2).
     std::cout << "Pruning weakest half of population.\n";
     p.m_organisms.erase(p.m_organisms.begin() + POPULATION_SIZE/2, p.m_organisms.end());
@@ -237,11 +242,6 @@ int main(int argc, char **argv) {
     // Default file name is DEFAULT_POPULATION_FILENAME.
     std::cout << "Saving to latest population file at " << DEFAULT_POPULATION_FILENAME << '\n';
     p.save();
-    
-    // Save this generation for possible plotting purposes.
-    std::cout << "Saving to historic generation population file at pops/generation_" << i << ".pop\n";
-    std::string generationFilename = "pops/generation_" + std::to_string(i) + ".pop";
-    p.save(generationFilename);
   }
   
   // Enter here exit cleanup code.

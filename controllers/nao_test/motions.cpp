@@ -31,8 +31,11 @@ void moveRightLeg(const double t, Motor *RHipYawPitch, Motor *RHipRoll, Motor *R
     double targ = m->getTargetPosition();
     
     // Randomly modify the target position to targ +- [-1:1]*targ*LAMBDA.
-    // Make it progressively harder as t increases.
-    targ += sin(t/3)*dist(mt)*LAMBDA+t/20.0*LAMBDA*dist(mt);
+    double delta = sin(t/3)*dist(mt)*LAMBDA;
+    
+    // Make it progressively harder as t increases.  At 20 seconds, target changes double.
+    // By 40 seconds, target changes 5x in magnitude.
+    targ += delta + delta * pow(t/20.0, 2);
     
     // Clamp the target to min:max positions.
     targ = clamp(targ, m->getMinPosition(), m->getMaxPosition());
