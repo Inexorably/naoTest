@@ -1,10 +1,8 @@
 #include <webots/Robot.hpp>
 #include <webots/Motor.hpp>
 #include <webots/camera.hpp>
-
 // For supervisor / COM etc
 #include <webots/Node.hpp>
-
 #include <webots/accelerometer.hpp>
 #include <webots/camera.hpp>
 #include <webots/DistanceSensor.hpp>
@@ -16,12 +14,11 @@
 #include <webots/robot.hpp>
 #include <webots/TouchSensor.hpp>
 #include <webots/utils/motion.hpp>
-
 #include <webots/Supervisor.hpp>
 
+#include <windows.h>
 
 #include <math.h>
-
 #include <vector>
 
 #include "utilities.h"
@@ -64,6 +61,9 @@ int main(int argc, char **argv) {
   }
   Field *trans_field = robot_node->getField("translation");
   Field *rot_field = robot_node->getField("rotation");
+  
+  // If the pops/ folder where population files are stored does not exist, create it.
+  CreateDirectory("pops", NULL);
 
   //////////////////////////////////////////////////////////////////////////
 
@@ -132,13 +132,22 @@ int main(int argc, char **argv) {
     std::cout << "Entering generation " << i << std::endl;
     
     // For each organism in the population, run the simulation in order to generate fitness values.
+    int progressTickerA = 0;   // For printing to console / debugging.
+    int progressTickerB = 0;
     for (Organism& o : p.m_organisms) {
-    
+      // Print progress to console every 10% of the current population.
+      progressTickerA++;
+      if (progressTickerA > POPULATION_SIZE/10) {
+        progressTickerB++;
+        progressTickerA = 0;
+        std::cout << "Current generation (" << i << ") progress: " << progressTickerB*10 << "%\n";
+      }
+      
       // Get the start time of each organism's simulation.
       double t0 = robot->getTime();
     
-      // Simulate robot.
-      while (robot->step(timeStep) != -1) {
+      // Simulate robot.  If robot stays stable for more than SIMULATION_TIME_MAX seconds, break.
+      while (robot->step(timeStep) != -1 && robot->getTime() < SIMULATION_TIME_MAX) {
         // Move right leg randomly.
         moveRightLeg(robot->getTime(), RHipYawPitch, RHipRoll, RHipPitch, RKneePitch, RAnklePitch, RAnkleRoll);
         
@@ -154,10 +163,10 @@ int main(int argc, char **argv) {
           double zmply = zmps[0].m_y;
           
           // Check the derivatives of the zmps.
-          zmplxdt = (zmplx - zmplx_prev) / (timeStep * STEPS_PER_CONTROL);
-          zmplydt = (zmply - zmply_prev) / (timeStep * STEPS_PER_CONTROL);
-          zmplxd2t = (zmplxdt - zmplxdt_prev) / (timeStep * STEPS_PER_CONTROL);
-          zmplyd2t = (zmplydt - zmplydt_prev) / (timeStep * STEPS_PER_CONTROL);
+          zmplxdt = (zmplx - zmplx_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
+          zmplydt = (zmply - zmply_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
+          zmplxd2t = (zmplxdt - zmplxdt_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
+          zmplyd2t = (zmplydt - zmplydt_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
           
           // Put the control inputs into a vector to pass to the control function.
           std::vector<double> x = {zmplx, zmply, zmplxdt, zmplydt, zmplxd2t, zmplyd2t};
@@ -190,6 +199,9 @@ int main(int argc, char **argv) {
       if (stableTime > bestStableTime) {
         bestStableTime = stableTime;
         std::cout << "New longest stable time: " << bestStableTime << std::endl;
+        std::string bestOrganismFilename = "pops/star.organism";
+        std::cout << "Saving best organism to: " << bestOrganismFilename << std::endl;
+        o.save(bestOrganismFilename);
       }
       
       // Increment the runs counter and stable time tracker variables.
@@ -207,17 +219,29 @@ int main(int argc, char **argv) {
     p.sortOrganisms();
     
     // Save best performing half of population (POPULATION_SIZE/2).
+    std::cout << "Pruning weakest half of population.\n";
     p.m_organisms.erase(p.m_organisms.begin() + POPULATION_SIZE/2, p.m_organisms.end());
     
     // Breed the best performing half of the population (POPULATION_SIZE/2/2 == POPULATION_SIZE/4).
+    std::cout << "Breeding population.\n";
     p.reproduceOrganisms();
+
     
     // Make copies of random members of the previous generation and children, 
     // mutate them, and add them to population.
     // Adds another POPULATION_SIZE/4, and restores our population to POPULATION_SIZE.
+    std::cout << "Mutating population.\n";
     p.mutateOrganisms();
     
-    // Save the population to a file or update the active file.
+    // Update the default population file which holds the latest population.
+    // Default file name is DEFAULT_POPULATION_FILENAME.
+    std::cout << "Saving to latest population file at " << DEFAULT_POPULATION_FILENAME << '\n';
+    p.save();
+    
+    // Save this generation for possible plotting purposes.
+    std::cout << "Saving to historic generation population file at pops/generation_" << i << ".pop\n";
+    std::string generationFilename = "pops/generation_" + std::to_string(i) + ".pop";
+    p.save(generationFilename);
   }
   
   // Enter here exit cleanup code.
