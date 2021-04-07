@@ -253,9 +253,73 @@ int runEvolutions(int argc, char **argv) {
   return 1;
 }
 
+// Writes historic data in csv format to filename for plotting in an external program.
+// Assumes files are in pops/generation_X.pop, where X varies from 0 to n.
+// Column 1: Generation number
+// Column 2: Min stable time
+// Column 3: Mean stable time
+// Column 4: Max stable time
+void writePopulationInfo(const std::string& outfilename) {
+  // Create a dummy population object.
+  Population p;
+  
+  // Create the ofstream.
+  std::ofstream outfile;
+  outfile.open(outfilename);
+
+  // Loop through the generations.
+  for (int i = 0; true; i++) {
+    // Create the generation filename we are checking.
+    std::string generationFilename = "pops/generation_" + std::to_string(i) + ".pop";    
+  
+    // Create the ifstream so we can check file existance.
+    std::ifstream infile(generationFilename);
+    
+    // If the file does not exist, break.
+    std::string line;
+    std::getline(infile, line);
+    if (line.empty()) {
+      break;
+    }
+    
+    // Load the generation into p.
+    p.load(generationFilename);
+    
+    // Loop through p and calculate the values of interest.
+    double stableTimeMin = 0;
+    double stableTimeMean = 0;
+    double stableTimeMax = 0;
+    for (Organism o : p.m_organisms) {
+      double organismMeanStableTime = o.getFitness();
+      stableTimeMean += organismMeanStableTime;
+      if (organismMeanStableTime < stableTimeMin) {
+        stableTimeMin = organismMeanStableTime;
+        continue;
+      }
+      if (organismMeanStableTime > stableTimeMax) {
+        stableTimeMax = organismMeanStableTime;
+        continue;
+      }
+    }
+    // stableTimeMean is currently the sum of the mean stable times of the organisms in that generation.
+    // Divide by the number of organisms to get mean.
+    stableTimeMean = stableTimeMean/p.m_organisms.size();
+    
+    // Write our values to our output file.
+    outfile << i << "," << stableTimeMin << "," << stableTimeMean << "," << stableTimeMax << '\n';
+  }
+
+  // We have read all the successive generation files.
+  std::cout << "Wrote " << p.m_generation + 1 << " generations of data to " << outfilename << '\n';
+  return;
+}
+
 int main(int argc, char **argv) {
   // Evolve the controllers.  
   runEvolutions(argc, argv);
+  
+  // Print generation data to output csv file.
+  //writePopulationInfo("pops/historicalData.csv");
   
   return 2;
 }
