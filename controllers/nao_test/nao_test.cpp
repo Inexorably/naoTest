@@ -127,9 +127,12 @@ int runEvolutions(int argc, char **argv) {
   int zmplxd2t = 0;
   int zmplyd2t = 0;
   
+  // We may not start at the first generation.
+  int initialGeneration = p.m_generation;
+  
   // Iterate through each generation and evolve.
-  for (int i = 0; i < NUM_GENERATIONS; i++) {
-    std::cout << "Entering generation " << i << std::endl;
+  for (; p.m_generation - initialGeneration < NUM_GENERATIONS; p.m_generation++) {
+    std::cout << "Entering generation " << p.m_generation << std::endl;
     
     // For each organism in the population, run the simulation in order to generate fitness values.
     int progressTickerA = 0;   // For printing to console / debugging.
@@ -140,7 +143,7 @@ int runEvolutions(int argc, char **argv) {
       if (progressTickerA > POPULATION_SIZE/10) {
         progressTickerB++;
         progressTickerA = 0;
-        std::cout << "Current generation (" << i << ") progress: " << progressTickerB*10 << "%\n";
+        std::cout << "Current generation (" << p.m_generation << ") progress: " << progressTickerB*10 << "%\n";
       }
       
       // Get the start time of each organism's simulation.
@@ -220,8 +223,8 @@ int runEvolutions(int argc, char **argv) {
     p.sortOrganisms();
     
     // Save this generation for possible plotting purposes.
-    std::cout << "Saving to historic generation population file at pops/generation_" << i << ".pop\n";
-    std::string generationFilename = "pops/generation_" + std::to_string(i) + ".pop";
+    std::cout << "Saving to historic generation population file at pops/generation_" << p.m_generation << ".pop\n";
+    std::string generationFilename = "pops/generation_" + std::to_string(p.m_generation) + ".pop";
     p.save(generationFilename);
     
     // Save best performing half of population (POPULATION_SIZE/2).
