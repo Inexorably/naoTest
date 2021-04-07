@@ -318,6 +318,7 @@ void Organism::save(const std::string& filename) const {
 
 // Initialize a population with n random organisms.
 Population::Population(const int& n) {
+  m_generation = 0;
   for (int i = 0; i < n; i++) {
     m_organisms.push_back(Organism());
   }
@@ -325,6 +326,7 @@ Population::Population(const int& n) {
 
 // Create a population with POPULATION_SIZE random organisms.
 Population::Population() {
+  m_generation = 0;
   for (int i = 0; i < POPULATION_SIZE; i++) {
     m_organisms.push_back(Organism());
   }
@@ -397,6 +399,8 @@ void Population::save(const std::string& filename) const {
   
   // Begin by writing population header information.
   outfile << FILE_BLOCK_POPULATION;
+  outfile << FILE_BLOCK_GENERATION;
+  outfile <<"\t\t" << std::to_string(m_generation) << '\n';
   outfile << FILE_BLOCK_POPULATION_SIZE;
   outfile <<"\t\t" << std::to_string(m_organisms.size()) << '\n';
   outfile << FILE_BLOCK_NUM_STATE_VARS;
@@ -468,14 +472,32 @@ void Population::save() const {
 }
 
 // Loads the population from a given file.  If ignoreHistory is true, do not load the
-// m_totalStableTime and m_numSimulation members from the file. 
+// m_totalStableTime and m_numSimulation members from the file.
 void Population::load(const std::string& filename, const bool& ignoreHistory) {
   // Create the ifstream.
   std::ifstream infile(filename);
   
-  // Skip the fixed header information.
-  std::string line;
+  // Mostly skip the fixed header information.
+  std::string line;                  // Some possible values:
   std::getline(infile, line);        // <population>
+
+  //If the first line is empty, return.  
+  if (line.empty()) {
+    return;
+  }
+  
+  // Skip more header information.
+  std::getline(infile, line);        // <generation>
+  std::getline(infile, line);        // 3
+  
+  // Clean and set the m_generation value if we are not ignoring history.
+  line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+  line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+  if (!ignoreHistory) {
+    m_generation = std::stod(line) + 1.0;   //We create the object as the next generation, to correctly resume progress.
+  }
+  
+  //Continue handling the header and skipping lines.
   std::getline(infile, line);        // <size>
   std::getline(infile, line);        // 1000
   std::getline(infile, line);        // <NUM_STATE_VARS>

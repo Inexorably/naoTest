@@ -104,6 +104,9 @@ struct Population {
   // This will be kept in descending order.  > operator for organism will be defined.
   std::vector<Organism> m_organisms;
   
+  // The current generation of this population.
+  int m_generation;
+  
   // Sort the m_organisms vector using Organism::operator<.
   void sortOrganisms();
   
