@@ -26,11 +26,6 @@ const double FOOT_LENGTH = 0.16;
 // Motors are servos, so target position is in rads.
 const double LAMBDA = 0.02;
 
-// Have slightly different frequency coefficients for each motor to introduce more motion variance.
-// Note: this must be of length NUM_OUTPUT_VARS.
-// TODO: Add verification check on OMEGA.
-const std::vector<double> OMEGA = {1.00, 1.05, 1.10, 1.15, 1.20, 1.25, 1.30, 1.35, 1.40, 1.45, 1.50};
-
 /////////////////////////////////////// Genetics constants ///////////////////////////////////////////////
 
 // Determines the max number of instances of a type of function on a state variable an expression can have.
@@ -55,7 +50,8 @@ const int NUM_OUTPUT_VARS = 10;
 // Mutation probability between 0 to 1.
 const double MUTATION_CHANCE = 1/static_cast<double>(NUM_STATE_VARS * NUM_OUTPUT_VARS);
 
-// Number of organisms in population.
+// Number of organisms in population.  MUST BE MULTIPLE OF 4.
+// TODO: General integrity function, check is multiple of 4.
 const int POPULATION_SIZE = 1000;
 
 /////////////////////////////////////// File constants ///////////////////////////////////////////////
@@ -65,6 +61,7 @@ const std::string DEFAULT_POPULATION_FILENAME = "pops/population.pop";
 
 // XML-ish blocks for parsing files.
 const std::string FILE_BLOCK_POPULATION = "<population>\n";
+const std::string FILE_BLOCK_GENERATION = "\t<generation>\n";
 const std::string FILE_BLOCK_POPULATION_SIZE = "\t<size>\n";
 const std::string FILE_BLOCK_NUM_STATE_VARS = "\t<NUM_STATE_VARS>\n";
 const std::string FILE_BLOCK_NUM_OUTPUT_VARS = "\t<NUM_OUTPUT_VARS>\n";
