@@ -31,7 +31,7 @@ void moveRightLeg(const double t, Motor *RHipYawPitch, Motor *RHipRoll, Motor *R
     double targ = m->getTargetPosition();
     
     // Randomly modify the target position to targ +- [-1:1]*targ*LAMBDA.
-    double delta = sin(OMEGA[i]*t/1.5)*dist(mt)*LAMBDA;
+    double delta = sin(OMEGA[i]*2*t)*1.5*LAMBDA;
     i++;       // Increment the index for the OMEGA frequency modifier.
     
     // Make it progressively harder as t increases.  At 20 seconds, target changes double.

@@ -111,7 +111,7 @@ int runEvolutions(int argc, char **argv) {
   
   // Load p from the default file.  If no such file exists or file is corrupted,
   // the random p created upon construction will not be changed.
-  p.load();
+  p.load(DEFAULT_POPULATION_FILENAME, false);
   
   // For debugging purposes, output the best current stable time.
   double bestStableTime = 0;
@@ -150,6 +150,7 @@ int runEvolutions(int argc, char **argv) {
       while (robot->step(timeStep) != -1 && robot->getTime() < SIMULATION_TIME_MAX) {
         // Move right leg randomly.
         moveRightLeg(robot->getTime(), RHipYawPitch, RHipRoll, RHipPitch, RKneePitch, RAnklePitch, RAnkleRoll);
+        LAnklePitch->setPosition(0.2*sin(1.2*robot->getTime()));
         
         // Don't attempt to control every step.  Waiting more steps can reduce noise.
         static int ticker = 0;
