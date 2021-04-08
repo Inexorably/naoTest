@@ -4,14 +4,15 @@ In creating controllers for bipedal locomotion, the upper body is often neglecte
 
 <img src="https://user-images.githubusercontent.com/16945020/114021636-c1f1e700-9825-11eb-84e6-cf89739f7717.png" width="720">
 
-A simple nonlinear structure is used for the organism controllers.  Each organism takes NUM_STATE_VARS inputs and produces NUM_OUTPUT_VARS outputs (all doubles).  Each output from an organism is produced by the following formula, where the constants A:F are the genetic weights which allow for reproduction / mutation.  Note that for a given organism, the weights vary per output variable -- ie the A<sub>1</sub> value to produce the first output variable is a different value from the A<sub>1</sub> value used to produce the second output variable.  Weights can be examined by opening the .pop or .organism files generated from running runEvolutions().  Note that the value at the zero state of all control functions is zero.
+A simple nonlinear structure is used for the organism controllers.  Each organism takes NUM_STATE_VARS inputs and produces NUM_OUTPUT_VARS outputs (all doubles).  Weights can be examined by opening the .pop or .organism files generated from running runEvolutions().  Note that the value at the zero state of all control functions is zero.  For a given output variable y<sub>i</sub>, an organism will calculate that output variable per the following equation:
 
-![image](https://user-images.githubusercontent.com/16945020/114023883-43e30f80-9828-11eb-98c6-80a24b3b371b.png)
+![gene equation](https://user-images.githubusercontent.com/16945020/114053620-f83e5f00-9843-11eb-88c7-365bfafd4d1f.png)
 
+Where x is the input variable (in the current set up, the zmp x y coordinates of the left foot and the first + second time derivatives comprise the 6 input variables).  Note that n is a random constant scalar.  The Expression class can be examined for more detail.
 
 Evolutions can currently be ran by calling runEvolutions() in main.  The destabilizing lower body motions are called from runEvolutions().  These may either be function calls (such as moveRightLeg()) or direct manipulations in runEvolutions() (such as calling LAnklePitch->setPosition(0.2\*sin(1.2\*robot->getTime()))).
 
-![Stability test gif](https://raw.githubusercontent.com/Inexorably/naoTest/media/media/naoTest3compressed.gif)
+![stability test gif](https://raw.githubusercontent.com/Inexorably/naoTest/media/media/naoTest3compressed.gif)
 
 Generational data can be obtained by calling writePopulationInfo() in main.
 
