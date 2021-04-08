@@ -1,6 +1,6 @@
 # naoTest
 
-In creating controllers for bipedal locomotion, the upper body is often neglected and modeled as a rigid, armless torso.  In this repo, the population of organisms (controllers) learn to use the robot's upper body and left hip + left ankle roll to stabilize the robot while a motion plant moves all motors in the right leg and left ankle pitch to attempt to destabilize the system.
+In creating controllers for bipedal locomotion, the upper body is often neglected and modeled as a rigid, armless torso.  In this repo, the population of organisms (controllers) learn to use the robot's upper body and left hip + left ankle roll to stabilize the robot while a motion plant moves all motors in the right leg and left ankle pitch to attempt to destabilize the system.  Note that the organism controllers currently take the left foot zmp and associated time derivatives as inputs, as it is assumed that the left foot is grounded.  An additional reversed copy of the controller can be added to extend the allowed cases to either feet, but restricting to a single foot speeds up learning.
 
 <img src="https://user-images.githubusercontent.com/16945020/114021636-c1f1e700-9825-11eb-84e6-cf89739f7717.png" width="720">
 
