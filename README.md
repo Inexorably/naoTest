@@ -8,4 +8,4 @@ In creating controllers for bipedal locomotion, the upper body is often neglecte
 
 Generational data can be obtained by calling writePopulationInfo() in main.
 
-<img src="https://user-images.githubusercontent.com/16945020/113967561-0f4e6400-97e6-11eb-9068-59a5d3dd001b.png" width="480">
+<img src="https://raw.githubusercontent.com/Inexorably/naoTest/media/media/naoplot.jpg" width="480">
