@@ -14,7 +14,7 @@
 #include "globals.h"
 #include "utilities.h"
 
-// Expressions are for each of the 3 state vars comprising an equation (Genetic).
+// Expressions are for each of the 3 input vars comprising an equation (Genetic).
 // Member vectors are of size 2*EXPRESSION_MAX_SUBLENGTHS.
 struct Expression {
   // Construct a random subexpression (single variable).
@@ -30,28 +30,23 @@ struct Expression {
   // Coefficients for sin, A1*sin(B1*x) ...
   std::vector<double> m_sin;
   
-  // Coefficients for cos, A1*cos(B1*x) ...
-  // TEMPORARILY DISABLED FOR TESTING if non f(0) == 0 functions are appropriate.
+  // Coefficients for cos, A1*cos(B1*x)-A1 ...
   std::vector<double> m_cos;
   
   // Coefficients for exp, A1*exp(B1*x)-A1 ...
   std::vector<double> m_exp;
 };
 
-// The genetics of an organism.  Returns a value based on the NUM_STATE_VARS state variables.
+// The genetics of an organism.  Returns a value based on the NUM_INPUT_VARS input variables.
 struct Gene {
-  // Construct a genome with NUM_STATE_VARS expression objects in m_expressions.
+  // Construct a genome with NUM_INPUT_VARS expression objects in m_expressions.
   Gene();
 
-  // One Expression per variable, so size NUM_STATE_VARS vector.
+  // One Expression per variable, so size NUM_INPUT_VARS vector.
   std::vector<Expression> m_expressions;
-
-  // Takes the current values of the state variables, and returns the output per m_expressions.
-  // Note: currently hard coded to 3 state vars.
-  double calculateValue(const double& x1, const double& x2, const double& x3) const;
   
-  // Takes the current values of the state variables, and returns the output per m_expressions.
-  // Takes a vector of doubles of size NUM_STATE_VARS.
+  // Takes the current values of the input variables, and returns the output per m_expressions.
+  // Takes a vector of doubles of size NUM_INPUT_VARS.
   double calculateValue(const std::vector<double>& x) const;
 };
 

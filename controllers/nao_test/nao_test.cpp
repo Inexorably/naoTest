@@ -318,10 +318,10 @@ void writePopulationInfo(const std::string& outfilename) {
 
 int main(int argc, char **argv) {
   // Evolve the controllers.  
-  //runEvolutions(argc, argv);
+  runEvolutions(argc, argv);
   
   // Print generation data to output csv file.
-  writePopulationInfo("pops/historicalData.csv");
+  //writePopulationInfo("pops/historicalData.csv");
   
   return 2;
 }

@@ -28,7 +28,7 @@ const double LAMBDA = 0.02;
 
 /////////////////////////////////////// Genetics constants ///////////////////////////////////////////////
 
-// Determines the max number of instances of a type of function on a state variable an expression can have.
+// Determines the max number of instances of a type of function on a input variable an expression can have.
 // See Expression class in "genetics.h".
 const int EXPRESSION_MAX_SUBLENGTHS = 4;
 
@@ -41,14 +41,14 @@ const double EXPRESSION_CONST_MAX = 2;
 const int EXPRESSION_CONST_EXP_MAX = 5;
 const int EXPRESSION_CONST_EXP_MIN = 0;
 
-// Number of state variables.
-const int NUM_STATE_VARS = 6;
+// Number of input variables.
+const int NUM_INPUT_VARS = 6;
 
 // Number of output vars.
 const int NUM_OUTPUT_VARS = 10;
 
 // Mutation probability between 0 to 1.
-const double MUTATION_CHANCE = 1/static_cast<double>(NUM_STATE_VARS * NUM_OUTPUT_VARS);
+const double MUTATION_CHANCE = 1/static_cast<double>(NUM_INPUT_VARS * NUM_OUTPUT_VARS);
 
 // Number of organisms in population.  MUST BE MULTIPLE OF 4.
 // TODO: General integrity function, check is multiple of 4.
@@ -63,7 +63,7 @@ const std::string DEFAULT_POPULATION_FILENAME = "pops/population.pop";
 const std::string FILE_BLOCK_POPULATION = "<population>\n";
 const std::string FILE_BLOCK_GENERATION = "\t<generation>\n";
 const std::string FILE_BLOCK_POPULATION_SIZE = "\t<size>\n";
-const std::string FILE_BLOCK_NUM_STATE_VARS = "\t<NUM_STATE_VARS>\n";
+const std::string FILE_BLOCK_NUM_INPUT_VARS = "\t<NUM_INPUT_VARS>\n";
 const std::string FILE_BLOCK_NUM_OUTPUT_VARS = "\t<NUM_OUTPUT_VARS>\n";
 const std::string FILE_BLOCK_ORGANISM = "<organism>\n";
 const std::string FILE_BLOCK_INDEX = "\t<index>\n";
@@ -79,18 +79,18 @@ const std::string FILE_BLOCK_EXP = "\t\t\t<m_exp>\n";
 
 // Delimitter stripped versions of the above due to getline etc stripping \n when we want to use for
 // comparisons.
-const std::string FILE_BLOCK_POPULATION_STRIPPPED = "<population>";
-const std::string FILE_BLOCK_POPULATION_SIZE_STRIPPPED = "\t<size>";
-const std::string FILE_BLOCK_NUM_STATE_VARS_STRIPPPED = "\t<NUM_STATE_VARS>";
-const std::string FILE_BLOCK_NUM_OUTPUT_VARS_STRIPPPED = "\t<NUM_OUTPUT_VARS>";
-const std::string FILE_BLOCK_ORGANISM_STRIPPPED = "<organism>";
-const std::string FILE_BLOCK_INDEX_STRIPPPED = "\t<index>";
-const std::string FILE_BLOCK_TOTAL_STABLE_TIME_STRIPPPED = "\t<m_totalStableTime>";
-const std::string FILE_BLOCK_NUM_SIMULATIONS_STRIPPPED = "\t<m_numSimulations>";
-const std::string FILE_BLOCK_GENETICS_STRIPPPED = "\t<m_genetics>";
-const std::string FILE_BLOCK_EXPRESSIONS_STRIPPPED = "\t\t<m_expressions>";
-const std::string FILE_BLOCK_POLY_STRIPPPED = "\t\t\t<m_poly>";
-const std::string FILE_BLOCK_LOG_STRIPPPED = "\t\t\t<m_log>";
-const std::string FILE_BLOCK_SIN_STRIPPPED = "\t\t\t<m_sin>";
-const std::string FILE_BLOCK_COS_STRIPPPED = "\t\t\t<m_cos>";
-const std::string FILE_BLOCK_EXP_STRIPPPED = "\t\t\t<m_exp>";
+const std::string FILE_BLOCK_POPULATION_STRIPPED = "<population>";
+const std::string FILE_BLOCK_POPULATION_SIZE_STRIPPED = "\t<size>";
+const std::string FILE_BLOCK_NUM_INPUT_VARS_STRIPPED = "\t<NUM_INPUT_VARS>";
+const std::string FILE_BLOCK_NUM_OUTPUT_VARS_STRIPPED = "\t<NUM_OUTPUT_VARS>";
+const std::string FILE_BLOCK_ORGANISM_STRIPPED = "<organism>";
+const std::string FILE_BLOCK_INDEX_STRIPPED = "\t<index>";
+const std::string FILE_BLOCK_TOTAL_STABLE_TIME_STRIPPED = "\t<m_totalStableTime>";
+const std::string FILE_BLOCK_NUM_SIMULATIONS_STRIPPED = "\t<m_numSimulations>";
+const std::string FILE_BLOCK_GENETICS_STRIPPED = "\t<m_genetics>";
+const std::string FILE_BLOCK_EXPRESSIONS_STRIPPED = "\t\t<m_expressions>";
+const std::string FILE_BLOCK_POLY_STRIPPED = "\t\t\t<m_poly>";
+const std::string FILE_BLOCK_LOG_STRIPPED = "\t\t\t<m_log>";
+const std::string FILE_BLOCK_SIN_STRIPPED = "\t\t\t<m_sin>";
+const std::string FILE_BLOCK_COS_STRIPPED = "\t\t\t<m_cos>";
+const std::string FILE_BLOCK_EXP_STRIPPED = "\t\t\t<m_exp>";

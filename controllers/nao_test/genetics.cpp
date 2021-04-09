@@ -44,7 +44,6 @@ Expression::Expression() {
     m_sin.push_back(distD(mt));
   }
   
-  /*
   // m_cos
   temp = distI(mt);             //The number of elements being added.
   for (int i = 0; i < temp; i++) {
@@ -53,7 +52,6 @@ Expression::Expression() {
     m_cos.push_back(distD(mt));
     m_cos.push_back(distD(mt));
   }
-  */
   
   // m_exp
   temp = distI(mt);             //The number of elements being added.
@@ -69,75 +67,22 @@ Expression::Expression() {
 
 // Construct a genome with 3 expression objects in m_expressions.
 Gene::Gene() {
-  // Push back NUM_STATE_VARS subexpressions - one per state variable.
-  for (int i = 0; i < NUM_STATE_VARS; i++) { 
+  // Push back NUM_INPUT_VARS subexpressions - one per input variable.
+  for (int i = 0; i < NUM_INPUT_VARS; i++) { 
     Expression temp;         // Default constructor creates a random expression.
     m_expressions.push_back(temp);
   }
 }
 
-// TODO: Depreciate.
-// Takes the current values of the state variables, and returns the output per m_expressions.
-// Note: this is currently hard coded to 3 state vars.
-double Gene::calculateValue(const double& x1, const double& x2, const double& x3) const {
-  // Array so we can iterate through state variables.
-  double x[3] = {x1, x2, x3};
-  
-  // The value to be returned.
-  double result = 0;
-  
-  // Iterate through the state variables as per the subexpressions.
-  for (int i = 0; i < NUM_STATE_VARS; i++) {
-    // For each state variable, apply the various nonlinear expressions.
-    
-    // poly
-    for (size_t j = 0; j < m_expressions[i].m_poly.size(); j += 2) {
-      result += m_expressions[i].m_poly[j] * pow(x[i], static_cast<int>(m_expressions[i].m_poly[j+1]));
-    }
-    
-    //std::cout << "poly: " << result << std::endl;
-    
-    // log
-    for (size_t j = 0; j < m_expressions[i].m_log.size(); j += 2) {
-      result += m_expressions[i].m_log[j] * log(abs(x[i] * m_expressions[i].m_log[j+1]));
-    }
-    
-    //std::cout << "log: " << result << std::endl;
-    
-    // sin
-    for (size_t j = 0; j < m_expressions[i].m_sin.size(); j += 2) {
-      result += m_expressions[i].m_sin[j] * sin(x[i] * m_expressions[i].m_sin[j+1]);
-    }
-    
-    //std::cout << "sin: " << result << std::endl;
-    
-    // cos
-    for (size_t j = 0; j < m_expressions[i].m_cos.size(); j += 2) {
-      result += m_expressions[i].m_cos[j] * cos(x[i] * m_expressions[i].m_cos[j+1]);
-    }
-    
-    //std::cout << "cos: " << result << std::endl;
-    
-    // exp
-    for (size_t j = 0; j < m_expressions[i].m_exp.size(); j += 2) {
-      result += m_expressions[i].m_exp[j] * exp(x[i] * m_expressions[i].m_exp[j+1]) - m_expressions[i].m_exp[j];
-    }
-    
-    //std::cout << "exp: " << result << std::endl;
-  }
-
-  return result;
-}
-
-// Takes the current values of the state variables, and returns the output per m_expressions.
-// Takes a vector of doubles of size NUM_STATE_VARS.
+// Takes the current values of the input variables, and returns the output per m_expressions.
+// Takes a vector of doubles of size NUM_INPUT_VARS.
 double Gene::calculateValue(const std::vector<double>& x) const {
   // The value to be returned.
   double result = 0;
   
-  // Iterate through the state variables as per the subexpressions.
-  for (int i = 0; i < NUM_STATE_VARS; i++) {
-    // For each state variable, apply the various nonlinear expressions.
+  // Iterate through the input variables as per the subexpressions.
+  for (int i = 0; i < NUM_INPUT_VARS; i++) {
+    // For each input variable, apply the various nonlinear expressions.
     
     // poly
     for (size_t j = 0; j < m_expressions[i].m_poly.size(); j += 2) {
@@ -162,7 +107,7 @@ double Gene::calculateValue(const std::vector<double>& x) const {
     
     // cos
     for (size_t j = 0; j < m_expressions[i].m_cos.size(); j += 2) {
-      result += m_expressions[i].m_cos[j] * cos(x[i] * m_expressions[i].m_cos[j+1]);
+      result += m_expressions[i].m_cos[j] * cos(x[i] * m_expressions[i].m_cos[j+1]) - m_expressions[i].m_cos[j];
     }
     
     //std::cout << "cos: " << result << std::endl;
@@ -194,7 +139,7 @@ Organism::Organism() {
 // Mutate the current organism.  Each expression has a MUTATION_CHANCE chance of changing.
 void Organism::mutate() {
   //Loop through the m_genetics and m_expressions and randomly change the expressions.
-  // m_genetics is of size NUM_OUTPUT_VARS, and each Gene g.m_expressions is of size NUM_STATE_VARS.
+  // m_genetics is of size NUM_OUTPUT_VARS, and each Gene g.m_expressions is of size NUM_INPUT_VARS.
   for (Gene& g : m_genetics) {
     for (Expression& e : g.m_expressions) {
       // Randomly replace one of the expressions with a new one.
@@ -216,8 +161,8 @@ Organism Organism::reproduce(const Organism& partner) const {
   
   // Loop through the genetics (NUM_OUTPUT_VARS many) of the child object.
   for (int i = 0; i < NUM_OUTPUT_VARS; i++) {
-    // Loop through the expressions (NUM_STATE_VARS many) in each gene.
-    for (int j = 0; j < NUM_STATE_VARS; j++) {
+    // Loop through the expressions (NUM_INPUT_VARS many) in each gene.
+    for (int j = 0; j < NUM_INPUT_VARS; j++) {
       // For each expression, set the child expression to one of the parent's.
       // If true with 50% chance, set to parent one (*this).
       if (trueWithProbability(0.5)) {
@@ -279,7 +224,7 @@ void Organism::save(const std::string& filename) const {
     outfile << FILE_BLOCK_EXPRESSIONS;
     
     // Loop through the expressions and write the variable values.
-    // m_expressions is of size NUM_STATE_VARS.
+    // m_expressions is of size NUM_INPUT_VARS.
     for (Expression e : g.m_expressions) {
       // Loop through and write m_poly coeffs
       outfile << FILE_BLOCK_POLY;
@@ -403,8 +348,8 @@ void Population::save(const std::string& filename) const {
   outfile <<"\t\t" << std::to_string(m_generation) << '\n';
   outfile << FILE_BLOCK_POPULATION_SIZE;
   outfile <<"\t\t" << std::to_string(m_organisms.size()) << '\n';
-  outfile << FILE_BLOCK_NUM_STATE_VARS;
-  outfile << "\t\t" << std::to_string(NUM_STATE_VARS) << '\n';
+  outfile << FILE_BLOCK_NUM_INPUT_VARS;
+  outfile << "\t\t" << std::to_string(NUM_INPUT_VARS) << '\n';
   outfile << FILE_BLOCK_NUM_OUTPUT_VARS;
   outfile << "\t\t" << std::to_string(NUM_OUTPUT_VARS) << '\n';
   
@@ -427,7 +372,7 @@ void Population::save(const std::string& filename) const {
       outfile << FILE_BLOCK_EXPRESSIONS;
       
       // Loop through the expressions and write the variable values.
-      // m_expressions is of size NUM_STATE_VARS.
+      // m_expressions is of size NUM_INPUT_VARS.
       for (Expression e : g.m_expressions) {
         // Loop through and write m_poly coeffs
         outfile << FILE_BLOCK_POLY;
@@ -500,7 +445,7 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
   //Continue handling the header and skipping lines.
   std::getline(infile, line);        // <size>
   std::getline(infile, line);        // 1000
-  std::getline(infile, line);        // <NUM_STATE_VARS>
+  std::getline(infile, line);        // <NUM_INPUT_VARS>
   std::getline(infile, line);        // 6
   std::getline(infile, line);        // <NUM_OUTPUT_VARS>
   std::getline(infile, line);        // 10
@@ -524,7 +469,7 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
   for (; std::getline(infile, line); ) {
     // If we are encountering a new organism object, increment the index of the organism
     // in *this.m_organisms that we are working on.  We also reset geneTicker and expressionTicker.
-    if (line == FILE_BLOCK_ORGANISM_STRIPPPED) {
+    if (line == FILE_BLOCK_ORGANISM_STRIPPED) {
       organismTicker++;
       //std::cout << line << ": incrementing organismTicker: " << organismTicker << std::endl;
       geneTicker = -1;
@@ -534,7 +479,7 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
     
     // The index is for people manually reading the file and referencing organisms, so we don't care about it.
     // Index is already equal to organismTicker.
-    if (line == FILE_BLOCK_INDEX_STRIPPPED) {
+    if (line == FILE_BLOCK_INDEX_STRIPPED) {
       //std::cout << line << ": skipping next line" << std::endl;
       // We aren't interested in the index, so get it and then continue so that we skip the value.
       std::getline(infile, line);
@@ -543,7 +488,7 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
     }
     
      // Get and set m_totalStableTime.
-     if (line == FILE_BLOCK_TOTAL_STABLE_TIME_STRIPPPED) {
+     if (line == FILE_BLOCK_TOTAL_STABLE_TIME_STRIPPED) {
        // Get the value contained in the next line, strip the \t and \n chars,
        // and set the m_totalStableTime value.
        std::getline(infile, line);
@@ -559,7 +504,7 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
      }
      
      // Get and set m_numSimulations.
-     if (line == FILE_BLOCK_NUM_SIMULATIONS_STRIPPPED) {
+     if (line == FILE_BLOCK_NUM_SIMULATIONS_STRIPPED) {
        // Get the value contained in the next line, strip the \t and \n chars,
        // and set the m_totalStableTime value.
        std::getline(infile, line);
@@ -574,13 +519,13 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
      }
      
      // If detect m_genetics block we just continue to next line.
-     if (line == FILE_BLOCK_GENETICS_STRIPPPED) {
+     if (line == FILE_BLOCK_GENETICS_STRIPPED) {
        //std::cout << line << ": continuing" << std::endl;
        continue;
      }
      
      // If we detect an m_expressions block, we increment the gene index and reset the expression index.
-     if (line == FILE_BLOCK_EXPRESSIONS_STRIPPPED) {
+     if (line == FILE_BLOCK_EXPRESSIONS_STRIPPED) {
        geneTicker++;
        expressionTicker = -1;
        //std::cout << line << ": incrementing geneTicker: " << geneTicker;
@@ -588,18 +533,18 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
        continue;
      }
      
-     // Since the expression members have multiple members due to multiple state variables,
+     // Since the expression members have multiple members due to multiple input variables,
      // we need to handle an m_poly block being in the 'line' string at the bottom of the main loop.
      // Thus, we cannot simply use continue; as otherwise the getline at the top of the mainloop will
      // overwrite this.  So, we loop through the expressions until the final line is not a
      // m_poly block.
-     while (line == FILE_BLOCK_POLY_STRIPPPED) {
+     while (line == FILE_BLOCK_POLY_STRIPPED) {
      
        // If we detect a m_poly block, we clear the respective vector and fill it with values
        // until we encounter a non number line.
        // The m_poly block is the first subexpression block that we will encounter.
        // Thus, we increment the expressionTicker when we do so.
-       if (line == FILE_BLOCK_POLY_STRIPPPED) {  // Redundant in while loop but kept to keep style consistent with other expression blocks.
+       if (line == FILE_BLOCK_POLY_STRIPPED) {  // Redundant in while loop but kept to keep style consistent with other expression blocks.
          expressionTicker++;
          //std::cout << line << ": incrementing expressionTicker: " << expressionTicker << std::endl;
          
@@ -607,7 +552,7 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
          m_organisms[organismTicker].m_genetics[geneTicker].m_expressions[expressionTicker].m_poly.clear();
          
          // Loop through the lines until we encounter the m_log block which follows.       
-         while (std::getline(infile, line) && line != FILE_BLOCK_LOG_STRIPPPED) {
+         while (std::getline(infile, line) && line != FILE_BLOCK_LOG_STRIPPED) {
            // Clean line and push it back onto the expression vector.
            line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
            line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
@@ -619,14 +564,14 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
        
        // If we detect a m_log block, we clear the respective vector and fill it with values
        // until we encounter a non number line.
-       if (line == FILE_BLOCK_LOG_STRIPPPED) {
+       if (line == FILE_BLOCK_LOG_STRIPPED) {
          //std::cout << line << std::endl;
          
          // Clear the current m_log vector so that we can fill it with the values being read.
          m_organisms[organismTicker].m_genetics[geneTicker].m_expressions[expressionTicker].m_log.clear();
          
          // Loop through the lines until we encounter the m_log block which follows.       
-         while (std::getline(infile, line) && line != FILE_BLOCK_SIN_STRIPPPED) {
+         while (std::getline(infile, line) && line != FILE_BLOCK_SIN_STRIPPED) {
            // Clean line and push it back onto the expression vector.
            line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
            line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
@@ -640,14 +585,14 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
        // until we encounter a non number line.
        // The m_sin block is the first subexpression block that we will encounter.
        // Thus, we increment the expressionTicker when we do so.
-       if (line == FILE_BLOCK_SIN_STRIPPPED) {
+       if (line == FILE_BLOCK_SIN_STRIPPED) {
          //std::cout << line << std::endl;
          
          // Clear the current m_sin vector so that we can fill it with the values being read.
          m_organisms[organismTicker].m_genetics[geneTicker].m_expressions[expressionTicker].m_sin.clear();
          
          // Loop through the lines until we encounter the m_sin block which follows.       
-         while (std::getline(infile, line) && line != FILE_BLOCK_COS_STRIPPPED) {
+         while (std::getline(infile, line) && line != FILE_BLOCK_COS_STRIPPED) {
            // Clean line and push it back onto the expression vector.
            line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
            line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
@@ -659,14 +604,14 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
      
        // If we detect a m_cos block, we clear the respective vector and fill it with values
        // until we encounter a non number line.
-       if (line == FILE_BLOCK_COS_STRIPPPED) {
+       if (line == FILE_BLOCK_COS_STRIPPED) {
          //std::cout << line << std::endl;
          
          // Clear the current m_cos vector so that we can fill it with the values being read.
          m_organisms[organismTicker].m_genetics[geneTicker].m_expressions[expressionTicker].m_cos.clear();
          
          // Loop through the lines until we encounter the m_cos block which follows.       
-         while (std::getline(infile, line) && line != FILE_BLOCK_EXP_STRIPPPED) {
+         while (std::getline(infile, line) && line != FILE_BLOCK_EXP_STRIPPED) {
            // Clean line and push it back onto the expression vector.
            line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
            line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
@@ -678,7 +623,7 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
     
        // If we detect a m_exp block, we clear the respective vector and fill it with values
        // until we encounter a non number line.
-       if (line == FILE_BLOCK_EXP_STRIPPPED) {
+       if (line == FILE_BLOCK_EXP_STRIPPED) {
          //std::cout << line << std::endl;
          
          // Clear the current m_exp vector so that we can fill it with the values being read.
@@ -689,7 +634,7 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
          // or we can encounter a new <organism> block.  We handle those cases after this if statement,
          // once again without calling continue, as we cannot go backward when using std::getline().
          // We can also encounter a new <m_log> block.
-         while (std::getline(infile, line) && line != FILE_BLOCK_EXPRESSIONS_STRIPPPED && line != FILE_BLOCK_ORGANISM_STRIPPPED && line != FILE_BLOCK_POLY_STRIPPPED) {
+         while (std::getline(infile, line) && line != FILE_BLOCK_EXPRESSIONS_STRIPPED && line != FILE_BLOCK_ORGANISM_STRIPPED && line != FILE_BLOCK_POLY_STRIPPED) {
            // Clean line and push it back onto the expression vector.
            line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
            line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
@@ -711,7 +656,7 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
     // incrementing expressionTicker.
      
     // If line is an expression block, increment the geneTicker and continue.
-    if (line == FILE_BLOCK_EXPRESSIONS_STRIPPPED) {
+    if (line == FILE_BLOCK_EXPRESSIONS_STRIPPED) {
       geneTicker++;
       expressionTicker = -1;
       //std::cout << line << ": incrementing geneTicker: " << geneTicker << std::endl;
@@ -722,7 +667,7 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
     // Else if the line is an organism block:
     // If we are encountering a new organism object, increment the index of the organism
     // in *this.m_organisms that we are working on.  We also reset geneTicker and expressionTicker.
-    if (line == FILE_BLOCK_ORGANISM_STRIPPPED) {
+    if (line == FILE_BLOCK_ORGANISM_STRIPPED) {
       organismTicker++;
       //std::cout << line << ": incrementing organismTicker: " << organismTicker << std::endl;
       geneTicker = -1;
