@@ -218,6 +218,8 @@ void Organism::save(const std::string& filename) const {
   outfile << "\t\t" << std::to_string(m_totalStableTime) << '\n';
   outfile << FILE_BLOCK_NUM_SIMULATIONS;
   outfile << "\t\t" << std::to_string(m_numSimulations) << '\n';
+  outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
+  outfile << "\t\t" << std::to_string(m_totalZMPDistance) << '\n';
 
   // Write each organisms m_genetics, of size NUM_OUTPUT_VARS.
   outfile << FILE_BLOCK_GENETICS;
@@ -366,6 +368,8 @@ void Population::save(const std::string& filename) const {
     outfile << "\t\t" << std::to_string(m_organisms[i].m_totalStableTime) << '\n';
     outfile << FILE_BLOCK_NUM_SIMULATIONS;
     outfile << "\t\t" << std::to_string(m_organisms[i].m_numSimulations) << '\n';
+    outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
+    outfile << "\t\t" << std::to_string(m_organisms[i].m_totalZMPDistance) << '\n';
 
     // Write each organisms m_genetics, of size NUM_OUTPUT_VARS.
     outfile << FILE_BLOCK_GENETICS;
@@ -514,11 +518,26 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
        std::getline(infile, line);
        line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
        line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
-       // If ignoreHistory is true, we don't load the totalStableTime value.
+       // If ignoreHistory is true, we don't load the m_numSimulations value.
        if (!ignoreHistory) {
          m_organisms[organismTicker].m_numSimulations = std::stod(line);
        }
        //std::cout << line << ": recording num simulations" << std::endl;
+       continue;
+     }
+     
+     // Get and set m_totalZMPDistance.
+     if (line == FILE_BLOCK_TOTAL_ZMP_DISTANCE_STRIPPED) {
+       // Get the value contained in the next line, strip the \t and \n chars,
+       // and set the m_totalStableTime value.
+       std::getline(infile, line);
+       line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+       line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+       // If ignoreHistory is true, we don't load the m_totalZMPDistance value.
+       if (!ignoreHistory) {
+         m_organisms[organismTicker].m_totalZMPDistance = std::stod(line);
+       }
+       //std::cout << line << ": recording total zmp distance" << std::endl;
        continue;
      }
      
