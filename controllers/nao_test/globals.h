@@ -17,8 +17,8 @@ const int STEPS_PER_CONTROL = 4;
 
 /////////////////////////////////////// NAO physical properties //////////////////////////////////////////
 
-const double FOOT_WIDTH = 0.08;  // per http://simspark.sourceforge.net/wiki/index.php/Models
-const double FOOT_LENGTH = 0.16;
+const double FOOT_WIDTH = 0.08;  // Per http://simspark.sourceforge.net/wiki/index.php/Models.
+const double FOOT_LENGTH = 0.16; // In meters.
 
 /////////////////////////////////////// Random motion / plant ////////////////////////////////////////////
 

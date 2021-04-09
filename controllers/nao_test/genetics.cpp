@@ -179,14 +179,18 @@ Organism Organism::reproduce(const Organism& partner) const {
   return child;
 }
 
-// The fitness of the organism (determined by average time before falling in simulation).
-// Returns m_totalStableTime/m_numSimulations (the average stable time).
+// The fitness of the organism, determined by average time before falling in simulation and
+// the average distance of zmp coordinates from the origin.
 double Organism::getFitness() const {
   // Returns -1 if num_simulations == 0.
   if (m_numSimulations == 0) { // More representative of concept than implictly casting as bool.
     return -1;
   }
-  return m_totalStableTime/m_numSimulations;
+  
+  // We base the fitness score on the following components.
+  double timeComponent = m_totalStableTime/static_cast<double>(m_numSimulations);
+  double zmpComponent = SIMULATION_TIME_MAX*(sqrt(pow(FOOT_WIDTH, 2)+pow(FOOT_LENGTH, 2))-m_totalZMPDistance/m_totalStableTime);
+  return timeComponent + zmpComponent;
 }
 
 // Defining comparison operators of organism for sorting / pruning purposes.

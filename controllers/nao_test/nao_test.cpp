@@ -166,6 +166,11 @@ int runEvolutions(int argc, char **argv) {
           double zmplx = zmps[0].m_x;
           double zmply = zmps[0].m_y;
           
+          // Add to the organism's m_totalZMPDistance member so that we can reward
+          // keeping the zmp x y closer to zero state.
+          // We weight by how much time has been spent at this zmp coordinate.
+          o.m_totalZMPDistance += sqrt(pow(zmplx, 2)+pow(zmply, 2))/(STEPS_PER_CONTROL*timeStep);
+
           // Check the derivatives of the zmps.
           zmplxdt = (zmplx - zmplx_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
           zmplydt = (zmply - zmply_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
