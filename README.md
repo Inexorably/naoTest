@@ -6,7 +6,7 @@ In creating controllers for bipedal locomotion, the upper body is often neglecte
 
 A simple nonlinear structure is used for the organism controllers.  Each organism takes NUM_STATE_VARS inputs and produces NUM_OUTPUT_VARS outputs (all doubles).  Weights can be examined by opening the .pop or .organism files generated from running runEvolutions().  Note that the value at the zero state of all control functions is zero.  For a given output variable y<sub>i</sub>, an organism will calculate that output variable per the following equation:
 
-![gene equation](https://user-images.githubusercontent.com/16945020/114053620-f83e5f00-9843-11eb-88c7-365bfafd4d1f.png)
+![gene equation](https://github.com/Inexorably/naoTest/blob/media/media/NAO%20expression.png?raw=true)
 
 Where x is the input variable (in the current set up, the zmp x y coordinates of the left foot and the first + second time derivatives comprise the 6 input variables).  Note that n is a random constant scalar.  The Expression class can be examined for more detail.
 
