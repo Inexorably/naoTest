@@ -188,9 +188,9 @@ double Organism::getFitness() const {
   }
   
   // We base the fitness score on the following components.
-  double timeComponent = m_totalStableTime/static_cast<double>(m_numSimulations);
-  double zmpComponent = SIMULATION_TIME_MAX*(sqrt(pow(FOOT_WIDTH, 2)+pow(FOOT_LENGTH, 2))-m_totalZMPDistance/m_totalStableTime);
-  return timeComponent + zmpComponent;
+  double timeComponent = m_totalStableTime;
+  double zmpComponent = m_totalStableTime*sqrt(pow(FOOT_WIDTH, 2)+pow(FOOT_LENGTH, 2))-m_totalZMPDistance;
+  return (timeComponent + zmpComponent)/static_cast<double>(m_numSimulations);
 }
 
 // Defining comparison operators of organism for sorting / pruning purposes.

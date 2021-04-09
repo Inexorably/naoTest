@@ -113,8 +113,8 @@ int runEvolutions(int argc, char **argv) {
   // the random p created upon construction will not be changed.
   p.load(DEFAULT_POPULATION_FILENAME, false);
   
-  // For debugging purposes, output the best current stable time.
-  double bestStableTime = 0;
+  // For debugging purposes, output the best current fitness score.
+  double bestFitnessScore = -11111111;
   
   // Track the zmp derivatives every STEPS_PER_CONTROL steps to use as additional control inputs.
   // Assume starting from rest.
@@ -205,17 +205,22 @@ int runEvolutions(int argc, char **argv) {
       // Get the time the robot was stable.
       double stableTime = robot->getTime() - t0;
       
-      if (stableTime > bestStableTime) {
-        bestStableTime = stableTime;
-        std::cout << "New longest stable time: " << bestStableTime << std::endl;
+      // Increment the runs counter and stable time tracker variables.
+      o.m_totalStableTime += stableTime;
+      ++o.m_numSimulations;
+      
+      // Get the fitness score of this Organism.  This needs to be done after updating
+      // m_totalStableTime and m_numSimulations.
+      double fitnessScore = o.getFitness();
+      
+      // If this is a new best fitness scoring organism, we save it and print to console.
+      if (fitnessScore > bestFitnessScore) {
+        bestFitnessScore = fitnessScore;
+        std::cout << "New best fitness score: " << bestFitnessScore << std::endl;
         std::string bestOrganismFilename = "pops/star.organism";
         std::cout << "Saving best organism to: " << bestOrganismFilename << std::endl;
         o.save(bestOrganismFilename);
       }
-      
-      // Increment the runs counter and stable time tracker variables.
-      o.m_totalStableTime += stableTime;
-      ++o.m_numSimulations;
       
       // Reset simulation.
       robot->simulationReset();
