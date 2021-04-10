@@ -239,7 +239,7 @@ int runEvolutions(int argc, char **argv) {
     // Track the runtime of each generation to add to m_runtime of the population object.
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = end-start;
-    p.m_runtime = diff.count();
+    p.m_runtime += diff.count();
     
     // Save this generation for possible plotting purposes.
     std::cout << "Saving to historic generation population file at pops/generation_" << p.m_generation << ".pop\n";
