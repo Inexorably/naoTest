@@ -192,7 +192,11 @@ double Organism::getFitness() const {
   double timeComponent = m_totalStableTime/static_cast<double>(m_numSimulations);
   double zmpComponent = (m_totalStableTime*sqrt(pow(FOOT_WIDTH, 2)+pow(FOOT_LENGTH, 2))-m_totalZMPDistance)/static_cast<double>(m_numSimulations);
   
-  // If 
+  // If we exceed the transition time, greatly increase the zmp component weighting to
+  // encourage the robot to minimize zmp.
+  if (timeComponent > FITNESS_WEIGHT_ZMP_TRANSITION_TIME) {
+    zmpComponent = zmpComponent * FITNESS_WEIGHT_ZMP_TRANSITION_COEF;
+  }
   
   return (timeComponent + zmpComponent);
 }
