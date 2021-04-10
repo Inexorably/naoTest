@@ -322,7 +322,7 @@ void writePopulationInfo(const std::string& outfilename) {
   }
 
   // We have read all the successive generation files.
-  std::cout << "Wrote " << p.m_generation + 1 << " generations of data to " << outfilename << '\n';
+  std::cout << "Wrote " << p.m_generation - 1 << " generations of data to " << outfilename << '\n';
   return;
 }
 

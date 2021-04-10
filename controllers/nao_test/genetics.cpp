@@ -134,6 +134,7 @@ Organism::Organism() {
   
   m_totalStableTime = 0;
   m_numSimulations = 0;
+  m_totalZMPDistance = 0;
 }
 
 // Mutate the current organism.  Each expression has a MUTATION_CHANCE chance of changing.
@@ -188,9 +189,12 @@ double Organism::getFitness() const {
   }
   
   // We base the fitness score on the following components.
-  double timeComponent = m_totalStableTime;
-  double zmpComponent = m_totalStableTime*sqrt(pow(FOOT_WIDTH, 2)+pow(FOOT_LENGTH, 2))-m_totalZMPDistance;
-  return (timeComponent + zmpComponent)/static_cast<double>(m_numSimulations);
+  double timeComponent = m_totalStableTime/static_cast<double>(m_numSimulations);
+  double zmpComponent = (m_totalStableTime*sqrt(pow(FOOT_WIDTH, 2)+pow(FOOT_LENGTH, 2))-m_totalZMPDistance)/static_cast<double>(m_numSimulations);
+  
+  // If 
+  
+  return (timeComponent + zmpComponent);
 }
 
 // Defining comparison operators of organism for sorting / pruning purposes.
@@ -350,6 +354,8 @@ void Population::save(const std::string& filename) const {
   
   // Begin by writing population header information.
   outfile << FILE_BLOCK_POPULATION;
+  outfile << FILE_BLOCK_RUNTIME;
+  outfile <<"\t\t" << std::to_string(m_runtime) << '\n';
   outfile << FILE_BLOCK_GENERATION;
   outfile <<"\t\t" << std::to_string(m_generation) << '\n';
   outfile << FILE_BLOCK_POPULATION_SIZE;
@@ -437,6 +443,17 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
   //If the first line is empty, return.  
   if (line.empty()) {
     return;
+  }
+
+  // More initial header info:  
+  std::getline(infile, line);        // <runtime>
+  std::getline(infile, line);        // 632635481.079
+  
+  // Clean and set the m_generation value if we are not ignoring history.
+  line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+  line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+  if (!ignoreHistory) {
+    m_runtime = std::stod(line);
   }
   
   // Skip more header information.

@@ -47,6 +47,13 @@ const int NUM_INPUT_VARS = 6;
 // Number of output vars.
 const int NUM_OUTPUT_VARS = 10;
 
+// FITNESS_WEIGHT_ZMP_TRANSITION_TIME: average stable time at which we transition
+// to highly valuing zmp stability.  To have any affect, must be less than SIMULATION_TIME_MAX.
+// FITNESS_WEIGHT_ZMP_TRANSITION_COEF: the multiplier by which we multiply the zmp 
+// component to add more weighting to balancing.
+const double FITNESS_WEIGHT_ZMP_TRANSITION_TIME = 30;
+const double FITNESS_WEIGHT_ZMP_TRANSITION_COEF = 10;
+
 // Mutation probability between 0 to 1.
 const double MUTATION_CHANCE = 1/static_cast<double>(NUM_INPUT_VARS * NUM_OUTPUT_VARS);
 
@@ -61,6 +68,7 @@ const std::string DEFAULT_POPULATION_FILENAME = "pops/population.pop";
 
 // XML-ish blocks for parsing files.
 const std::string FILE_BLOCK_POPULATION = "<population>\n";
+const std::string FILE_BLOCK_RUNTIME = "\t<runtime>\n";
 const std::string FILE_BLOCK_GENERATION = "\t<generation>\n";
 const std::string FILE_BLOCK_POPULATION_SIZE = "\t<size>\n";
 const std::string FILE_BLOCK_NUM_INPUT_VARS = "\t<NUM_INPUT_VARS>\n";
@@ -81,6 +89,7 @@ const std::string FILE_BLOCK_EXP = "\t\t\t<m_exp>\n";
 // Delimitter stripped versions of the above due to getline etc stripping \n when we want to use for
 // comparisons.
 const std::string FILE_BLOCK_POPULATION_STRIPPED = "<population>";
+const std::string FILE_BLOCK_RUNTIME_STRIPPED = "\t<runtime>";
 const std::string FILE_BLOCK_POPULATION_SIZE_STRIPPED = "\t<size>";
 const std::string FILE_BLOCK_NUM_INPUT_VARS_STRIPPED = "\t<NUM_INPUT_VARS>";
 const std::string FILE_BLOCK_NUM_OUTPUT_VARS_STRIPPED = "\t<NUM_OUTPUT_VARS>";

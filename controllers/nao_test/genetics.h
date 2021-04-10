@@ -106,6 +106,9 @@ struct Population {
   // The current generation of this population.
   int m_generation;
   
+  // The total runtime in seconds of the population, including all preceeding generations.
+  double m_runtime;
+  
   // Sort the m_organisms vector using Organism::operator<.
   void sortOrganisms();
   
