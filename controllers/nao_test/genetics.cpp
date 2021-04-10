@@ -134,6 +134,7 @@ Organism::Organism() {
   
   m_totalStableTime = 0;
   m_numSimulations = 0;
+  m_totalZMPDistance = 0;
 }
 
 // Mutate the current organism.  Each expression has a MUTATION_CHANCE chance of changing.
@@ -179,14 +180,21 @@ Organism Organism::reproduce(const Organism& partner) const {
   return child;
 }
 
-// The fitness of the organism (determined by average time before falling in simulation).
-// Returns m_totalStableTime/m_numSimulations (the average stable time).
+// The fitness of the organism, determined by average time before falling in simulation and
+// the average distance of zmp coordinates from the origin.
 double Organism::getFitness() const {
   // Returns -1 if num_simulations == 0.
   if (m_numSimulations == 0) { // More representative of concept than implictly casting as bool.
     return -1;
   }
-  return m_totalStableTime/m_numSimulations;
+  
+  // We base the fitness score on the following components.
+  double timeComponent = m_totalStableTime/static_cast<double>(m_numSimulations);
+  double zmpComponent = (m_totalStableTime*sqrt(pow(FOOT_WIDTH, 2)+pow(FOOT_LENGTH, 2))-m_totalZMPDistance)/static_cast<double>(m_numSimulations);
+  
+  // If 
+  
+  return (timeComponent + zmpComponent);
 }
 
 // Defining comparison operators of organism for sorting / pruning purposes.
@@ -214,6 +222,8 @@ void Organism::save(const std::string& filename) const {
   outfile << "\t\t" << std::to_string(m_totalStableTime) << '\n';
   outfile << FILE_BLOCK_NUM_SIMULATIONS;
   outfile << "\t\t" << std::to_string(m_numSimulations) << '\n';
+  outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
+  outfile << "\t\t" << std::to_string(m_totalZMPDistance) << '\n';
 
   // Write each organisms m_genetics, of size NUM_OUTPUT_VARS.
   outfile << FILE_BLOCK_GENETICS;
@@ -272,6 +282,7 @@ Population::Population(const int& n) {
 // Create a population with POPULATION_SIZE random organisms.
 Population::Population() {
   m_generation = 0;
+  m_runtime = 0;
   for (int i = 0; i < POPULATION_SIZE; i++) {
     m_organisms.push_back(Organism());
   }
@@ -344,6 +355,8 @@ void Population::save(const std::string& filename) const {
   
   // Begin by writing population header information.
   outfile << FILE_BLOCK_POPULATION;
+  outfile << FILE_BLOCK_RUNTIME;
+  outfile <<"\t\t" << std::to_string(m_runtime) << '\n';
   outfile << FILE_BLOCK_GENERATION;
   outfile <<"\t\t" << std::to_string(m_generation) << '\n';
   outfile << FILE_BLOCK_POPULATION_SIZE;
@@ -362,6 +375,8 @@ void Population::save(const std::string& filename) const {
     outfile << "\t\t" << std::to_string(m_organisms[i].m_totalStableTime) << '\n';
     outfile << FILE_BLOCK_NUM_SIMULATIONS;
     outfile << "\t\t" << std::to_string(m_organisms[i].m_numSimulations) << '\n';
+    outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
+    outfile << "\t\t" << std::to_string(m_organisms[i].m_totalZMPDistance) << '\n';
 
     // Write each organisms m_genetics, of size NUM_OUTPUT_VARS.
     outfile << FILE_BLOCK_GENETICS;
@@ -429,6 +444,17 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
   //If the first line is empty, return.  
   if (line.empty()) {
     return;
+  }
+
+  // More initial header info:  
+  std::getline(infile, line);        // <runtime>
+  std::getline(infile, line);        // 632635481.079
+  
+  // Clean and set the m_generation value if we are not ignoring history.
+  line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+  line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+  if (!ignoreHistory) {
+    m_runtime = std::stod(line);
   }
   
   // Skip more header information.
@@ -510,11 +536,26 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
        std::getline(infile, line);
        line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
        line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
-       // If ignoreHistory is true, we don't load the totalStableTime value.
+       // If ignoreHistory is true, we don't load the m_numSimulations value.
        if (!ignoreHistory) {
          m_organisms[organismTicker].m_numSimulations = std::stod(line);
        }
        //std::cout << line << ": recording num simulations" << std::endl;
+       continue;
+     }
+     
+     // Get and set m_totalZMPDistance.
+     if (line == FILE_BLOCK_TOTAL_ZMP_DISTANCE_STRIPPED) {
+       // Get the value contained in the next line, strip the \t and \n chars,
+       // and set the m_totalStableTime value.
+       std::getline(infile, line);
+       line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+       line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+       // If ignoreHistory is true, we don't load the m_totalZMPDistance value.
+       if (!ignoreHistory) {
+         m_organisms[organismTicker].m_totalZMPDistance = std::stod(line);
+       }
+       //std::cout << line << ": recording total zmp distance" << std::endl;
        continue;
      }
      

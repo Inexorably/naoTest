@@ -68,15 +68,19 @@ struct Organism {
     // NUM_STATE_VARS input variables, ie vector is size NUM_OUTPUT_VARS.
     std::vector<Gene> m_genetics;
     
-    // The fitness of the organism (determined by average time before falling in simulation).
-    // Returns m_totalStableTime/m_numSimulations.
+    // The fitness of the organism, determined by average time before falling in simulation and
+    // the average distance of zmp coordinates from the origin.
     double getFitness() const;
     
-    // Total time stable accross all simulations.
+    // Total time stable accross all simulations, in seconds.
     double m_totalStableTime;
 
     // The number of times this controller has been simulated.
     int m_numSimulations;
+    
+    // The TOTAL zmp distance from 0, 0, ie if zmp is at 1, 1 for 2 seconds, the
+    // m_totalZMPDistance value would be sqrt(2)*2.  Units are meters.
+    double m_totalZMPDistance;
    
     // Defining comparison operators of organism for sorting / pruning purposes.
     // Compares by getFitness().
@@ -101,6 +105,9 @@ struct Population {
   
   // The current generation of this population.
   int m_generation;
+  
+  // The total runtime in seconds of the population, including all preceeding generations.
+  double m_runtime;
   
   // Sort the m_organisms vector using Organism::operator<.
   void sortOrganisms();

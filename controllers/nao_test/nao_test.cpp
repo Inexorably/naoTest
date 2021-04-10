@@ -20,6 +20,7 @@
 
 #include <math.h>
 #include <vector>
+#include <chrono>
 
 #include "utilities.h"
 #include "globals.h"
@@ -113,8 +114,8 @@ int runEvolutions(int argc, char **argv) {
   // the random p created upon construction will not be changed.
   p.load(DEFAULT_POPULATION_FILENAME, false);
   
-  // For debugging purposes, output the best current stable time.
-  double bestStableTime = 0;
+  // For debugging purposes, output the best current fitness score.
+  double bestFitnessScore = -11111111;
   
   // Track the zmp derivatives every STEPS_PER_CONTROL steps to use as additional control inputs.
   // Assume starting from rest.
@@ -133,6 +134,9 @@ int runEvolutions(int argc, char **argv) {
   // Iterate through each generation and evolve.
   for (; p.m_generation - initialGeneration < NUM_GENERATIONS; p.m_generation++) {
     std::cout << "Entering generation " << p.m_generation << std::endl;
+    
+    // Track the runtime of each generation to add to m_runtime of the population object.
+    auto start = std::chrono::system_clock::now();
     
     // For each organism in the population, run the simulation in order to generate fitness values.
     int progressTickerA = 0;   // For printing to console / debugging.
@@ -166,6 +170,11 @@ int runEvolutions(int argc, char **argv) {
           double zmplx = zmps[0].m_x;
           double zmply = zmps[0].m_y;
           
+          // Add to the organism's m_totalZMPDistance member so that we can reward
+          // keeping the zmp x y closer to zero state.
+          // We weight by how much time has been spent at this zmp coordinate.
+          o.m_totalZMPDistance += sqrt(pow(zmplx, 2)+pow(zmply, 2))/(STEPS_PER_CONTROL*timeStep);
+
           // Check the derivatives of the zmps.
           zmplxdt = (zmplx - zmplx_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
           zmplydt = (zmply - zmply_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
@@ -200,17 +209,22 @@ int runEvolutions(int argc, char **argv) {
       // Get the time the robot was stable.
       double stableTime = robot->getTime() - t0;
       
-      if (stableTime > bestStableTime) {
-        bestStableTime = stableTime;
-        std::cout << "New longest stable time: " << bestStableTime << std::endl;
+      // Increment the runs counter and stable time tracker variables.
+      o.m_totalStableTime += stableTime;
+      ++o.m_numSimulations;
+      
+      // Get the fitness score of this Organism.  This needs to be done after updating
+      // m_totalStableTime and m_numSimulations.
+      double fitnessScore = o.getFitness();
+      
+      // If this is a new best fitness scoring organism, we save it and print to console.
+      if (fitnessScore > bestFitnessScore) {
+        bestFitnessScore = fitnessScore;
+        std::cout << "New best fitness score: " << bestFitnessScore << std::endl;
         std::string bestOrganismFilename = "pops/star.organism";
         std::cout << "Saving best organism to: " << bestOrganismFilename << std::endl;
         o.save(bestOrganismFilename);
       }
-      
-      // Increment the runs counter and stable time tracker variables.
-      o.m_totalStableTime += stableTime;
-      ++o.m_numSimulations;
       
       // Reset simulation.
       robot->simulationReset();
@@ -221,6 +235,11 @@ int runEvolutions(int argc, char **argv) {
     // Each organism in this generation of the population has been simulated now.
     // We sort by the fitness score.
     p.sortOrganisms();
+    
+    // Track the runtime of each generation to add to m_runtime of the population object.
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> diff = end-start;
+    p.m_runtime += diff.count();
     
     // Save this generation for possible plotting purposes.
     std::cout << "Saving to historic generation population file at pops/generation_" << p.m_generation << ".pop\n";
@@ -312,7 +331,7 @@ void writePopulationInfo(const std::string& outfilename) {
   }
 
   // We have read all the successive generation files.
-  std::cout << "Wrote " << p.m_generation + 1 << " generations of data to " << outfilename << '\n';
+  std::cout << "Wrote " << p.m_generation - 1 << " generations of data to " << outfilename << '\n';
   return;
 }
 
