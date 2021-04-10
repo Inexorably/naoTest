@@ -20,6 +20,7 @@
 
 #include <math.h>
 #include <vector>
+#include <chrono>
 
 #include "utilities.h"
 #include "globals.h"
@@ -134,6 +135,9 @@ int runEvolutions(int argc, char **argv) {
   for (; p.m_generation - initialGeneration < NUM_GENERATIONS; p.m_generation++) {
     std::cout << "Entering generation " << p.m_generation << std::endl;
     
+    // Track the runtime of each generation to add to m_runtime of the population object.
+    auto start = std::chrono::system_clock::now();
+    
     // For each organism in the population, run the simulation in order to generate fitness values.
     int progressTickerA = 0;   // For printing to console / debugging.
     int progressTickerB = 0;
@@ -231,6 +235,11 @@ int runEvolutions(int argc, char **argv) {
     // Each organism in this generation of the population has been simulated now.
     // We sort by the fitness score.
     p.sortOrganisms();
+    
+    // Track the runtime of each generation to add to m_runtime of the population object.
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> diff = end-start;
+    p.m_runtime = diff.count();
     
     // Save this generation for possible plotting purposes.
     std::cout << "Saving to historic generation population file at pops/generation_" << p.m_generation << ".pop\n";

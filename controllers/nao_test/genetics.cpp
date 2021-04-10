@@ -282,6 +282,7 @@ Population::Population(const int& n) {
 // Create a population with POPULATION_SIZE random organisms.
 Population::Population() {
   m_generation = 0;
+  m_runtime = 0;
   for (int i = 0; i < POPULATION_SIZE; i++) {
     m_organisms.push_back(Organism());
   }
