@@ -36,7 +36,6 @@ static int cleanUp(Supervisor *supervisor) {
   return 0;
 }
 
-
 // Creates a population and evolves the population of organisms through breeding / mutation.
 // Constants are set in globals.h.
 int runEvolutions(int argc, char **argv) {
@@ -105,6 +104,16 @@ int runEvolutions(int argc, char **argv) {
   fsrL->enable(timeStep);
   fsrR->enable(timeStep);
   
+  // Load motion files.
+  Motion hand_wave("../../motions/HandWave.motion");
+  Motion forwards("../../motions/Forwards50.motion");
+  Motion forwardsTest("../../motions/Forwards50testNoRoll.motion");   // Modified walking motion with 2x speed and no hip / ankle roll
+  Motion backwards("../../motions/Backwards.motion");
+  Motion side_step_left("../../motions/SideStepLeft.motion");
+  Motion side_step_right("../../motions/SideStepRight.motion");
+  Motion turn_left_60("../../motions/TurnLeft60.motion");
+  Motion turn_right_60("../../motions/TurnRight60.motion");
+  
   //////////////////////////////////////////////////////////////////////////
   
   // Generate an organism population of controllers.
@@ -152,9 +161,24 @@ int runEvolutions(int argc, char **argv) {
       
       // Get the start time of each organism's simulation.
       double t0 = robot->getTime();
+      
+      // Test the walk forward motion.
+      LShoulderPitch->setPosition(1.57);
+      RShoulderPitch->setPosition(1.57);
+      bool played = false;
     
       // Simulate robot.  If robot stays stable for more than SIMULATION_TIME_MAX seconds, break.
       while (robot->step(timeStep) != -1 && robot->getTime() < SIMULATION_TIME_MAX) {
+        if (robot->getTime() > 2 && !played) {
+          std::cout << "playing" << std::endl;
+          played = true;
+          forwardsTest.play();
+          continue;
+        }
+      
+        // Testing
+        continue;
+      
         // Move right leg randomly.
         moveRightLeg(robot->getTime(), RHipYawPitch, RHipRoll, RHipPitch, RKneePitch, RAnklePitch, RAnkleRoll);
         LAnklePitch->setPosition(0.2*sin(1.2*robot->getTime()));
