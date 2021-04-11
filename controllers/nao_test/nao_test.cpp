@@ -92,13 +92,13 @@ int runEvolutions(int argc, char **argv) {
   Motor *LAnkleRoll = robot->getMotor("LAnkleRoll");
   
   // For iterating through:
-  Motor *controlMotors[10] = {RShoulderPitch, RShoulderRoll, RElbowYaw, RElbowRoll, LShoulderPitch, LShoulderRoll, LElbowYaw, LElbowRoll, LHipRoll, LAnkleRoll};
+  Motor *controlMotors[12] = {RShoulderPitch, RShoulderRoll, RElbowYaw, RElbowRoll, LShoulderPitch, LShoulderRoll, LElbowYaw, LElbowRoll, LHipRoll, LAnkleRoll, RHipRoll, RAnkleRoll};
 
   //Misc sensors
   Camera *cameraTop = robot->getCamera("CameraTop");
   Camera *cameraBottom = robot->getCamera("CameraBottom");
-  cameraTop->enable(4 * timeStep);
-  cameraBottom->enable(4 * timeStep);
+  //cameraTop->enable(4 * timeStep);
+  //cameraBottom->enable(4 * timeStep);
   TouchSensor *fsrL = robot->getTouchSensor("LFsr");
   TouchSensor *fsrR = robot->getTouchSensor("RFsr");
   fsrL->enable(timeStep);
@@ -128,6 +128,8 @@ int runEvolutions(int argc, char **argv) {
   
   // Track the zmp derivatives every STEPS_PER_CONTROL steps to use as additional control inputs.
   // Assume starting from rest.
+  
+  // Left foot zmp data.
   int zmplx_prev = 0;
   int zmply_prev = 0;
   int zmplxdt = 0;
@@ -136,6 +138,16 @@ int runEvolutions(int argc, char **argv) {
   int zmplydt_prev = 0;
   int zmplxd2t = 0;
   int zmplyd2t = 0;
+
+  // Right foot zmp data.
+  int zmprx_prev = 0;
+  int zmpry_prev = 0;
+  int zmprxdt = 0;
+  int zmprydt = 0;
+  int zmprxdt_prev = 0;
+  int zmprydt_prev = 0;
+  int zmprxd2t = 0;
+  int zmpryd2t = 0;
   
   // We may not start at the first generation.
   int initialGeneration = p.m_generation;
@@ -169,19 +181,11 @@ int runEvolutions(int argc, char **argv) {
     
       // Simulate robot.  If robot stays stable for more than SIMULATION_TIME_MAX seconds, break.
       while (robot->step(timeStep) != -1 && robot->getTime() < SIMULATION_TIME_MAX) {
-        if (robot->getTime() > 2 && !played) {
-          std::cout << "playing" << std::endl;
+        if (robot->getTime() > 0.5 && !played) {
           played = true;
           forwardsTest.play();
           continue;
         }
-      
-        // Testing
-        continue;
-      
-        // Move right leg randomly.
-        moveRightLeg(robot->getTime(), RHipYawPitch, RHipRoll, RHipPitch, RKneePitch, RAnklePitch, RAnkleRoll);
-        LAnklePitch->setPosition(0.2*sin(1.2*robot->getTime()));
         
         // Don't attempt to control every step.  Waiting more steps can reduce noise.
         static int ticker = 0;
@@ -193,25 +197,39 @@ int runEvolutions(int argc, char **argv) {
           auto zmps = getZMPCoordinates(fsrL, fsrR);
           double zmplx = zmps[0].m_x;
           double zmply = zmps[0].m_y;
+          double zmprx = zmps[1].m_x;
+          double zmpry = zmps[1].m_y;
           
           // Add to the organism's m_totalZMPDistance member so that we can reward
           // keeping the zmp x y closer to zero state.
           // We weight by how much time has been spent at this zmp coordinate.
-          o.m_totalZMPDistance += sqrt(pow(zmplx, 2)+pow(zmply, 2))/(STEPS_PER_CONTROL*timeStep);
+          // We use the foot with more weight on it.
+          // If the left foot has more weight on it:
+          if (zmps[0].m_dominant) {
+            o.m_totalZMPDistance += sqrt(pow(zmplx, 2)+pow(zmply, 2))/(STEPS_PER_CONTROL*timeStep);
+          }
+          // Else, the right foot is supporting more weight:
+          else {
+            o.m_totalZMPDistance += sqrt(pow(zmprx, 2)+pow(zmpry, 2))/(STEPS_PER_CONTROL*timeStep);
+          }
 
           // Check the derivatives of the zmps.
           zmplxdt = (zmplx - zmplx_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
           zmplydt = (zmply - zmply_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
           zmplxd2t = (zmplxdt - zmplxdt_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
           zmplyd2t = (zmplydt - zmplydt_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
+          zmprxdt = (zmprx - zmprx_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
+          zmprydt = (zmpry - zmpry_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
+          zmprxd2t = (zmprxdt - zmprxdt_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
+          zmpryd2t = (zmprydt - zmprydt_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
           
           // Put the control inputs into a vector to pass to the control function.
-          std::vector<double> x = {zmplx, zmply, zmplxdt, zmplydt, zmplxd2t, zmplyd2t};
+          std::vector<double> x = {zmplx, zmply, zmplxdt, zmplydt, zmplxd2t, zmplyd2t, zmprx, zmpry, zmprxdt, zmprydt, zmprxd2t, zmpryd2t};
             
           // Generate each output variable based on the input (ie, loop through the system of equations).
           for (int j = 0; j < NUM_OUTPUT_VARS; j++) {
             // Find the respective motor input position and clamp it to the min:max bounds of that motor.
-            double input = o.m_genetics[j].calculateValue(x);
+            double input = controlMotors[j]->getTargetPosition()+o.m_genetics[j].calculateValue(x);
             input = clamp(input, controlMotors[j]->getMinPosition(), controlMotors[j]->getMaxPosition());   
             controlMotors[j]->setPosition(input);
             
@@ -220,6 +238,10 @@ int runEvolutions(int argc, char **argv) {
             zmply_prev = zmply;
             zmplxdt_prev = zmplxdt;
             zmplydt_prev = zmplydt;
+            zmprx_prev = zmprx;
+            zmpry_prev = zmpry;
+            zmprxdt_prev = zmprxdt;
+            zmprydt_prev = zmprydt;
           }
           ticker = 0;
         }
@@ -232,6 +254,10 @@ int runEvolutions(int argc, char **argv) {
       
       // Get the time the robot was stable.
       double stableTime = robot->getTime() - t0;
+      
+      // Get the x translation.
+      const double *pos = trans_field->getSFVec3f();
+      o.m_translationX += pos[0];
       
       // Increment the runs counter and stable time tracker variables.
       o.m_totalStableTime += stableTime;

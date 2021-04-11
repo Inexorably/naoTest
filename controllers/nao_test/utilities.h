@@ -18,6 +18,10 @@ using namespace webots;
 struct Point {
   double m_x;
   double m_y;
+  
+  // True if majority of weight is being stored on the foot of this point,
+  // as this structure is intended for zmps.
+  bool m_dominant;
 };
 
 // Takes the left and right foot force sensors, and prints the values to console.

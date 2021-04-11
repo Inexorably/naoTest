@@ -7,7 +7,7 @@
 const double FOOT_FORCE_MIN = 40;
 
 // Max simulation time before breaking in seconds.
-const int SIMULATION_TIME_MAX = 60;
+const int SIMULATION_TIME_MAX = 6;
 
 // The number of generations of our population we iterate through.
 const int NUM_GENERATIONS = 100;
@@ -42,10 +42,10 @@ const int EXPRESSION_CONST_EXP_MAX = 5;
 const int EXPRESSION_CONST_EXP_MIN = 0;
 
 // Number of input variables.
-const int NUM_INPUT_VARS = 6;
+const int NUM_INPUT_VARS = 12;
 
 // Number of output vars.
-const int NUM_OUTPUT_VARS = 10;
+const int NUM_OUTPUT_VARS = 12;
 
 // FITNESS_WEIGHT_ZMP_TRANSITION_TIME: average stable time at which we transition
 // to highly valuing zmp stability.  To have any affect, must be less than SIMULATION_TIME_MAX.
@@ -53,6 +53,11 @@ const int NUM_OUTPUT_VARS = 10;
 // component to add more weighting to balancing.
 const double FITNESS_WEIGHT_ZMP_TRANSITION_TIME = 30;
 const double FITNESS_WEIGHT_ZMP_TRANSITION_COEF = 10;
+
+// Basic multiplying coefficients for fitness function.
+const double FITNESS_WEIGHT_TIME_COEF = 0;
+const double FITNESS_WEIGHT_TIME_ZMP = 0;
+const double FITNESS_WEIGHT_TRANSLATION_X_COEF = 10;
 
 // Mutation probability between 0 to 1.
 const double MUTATION_CHANCE = 1/static_cast<double>(NUM_INPUT_VARS * NUM_OUTPUT_VARS);
@@ -78,6 +83,7 @@ const std::string FILE_BLOCK_INDEX = "\t<index>\n";
 const std::string FILE_BLOCK_TOTAL_STABLE_TIME = "\t<m_totalStableTime>\n";
 const std::string FILE_BLOCK_NUM_SIMULATIONS = "\t<m_numSimulations>\n";
 const std::string FILE_BLOCK_TOTAL_ZMP_DISTANCE = "\t<m_totalZMPDistance>\n";
+const std::string FILE_BLOCK_TOTAL_TRANSLATION_X = "\t<m_translationX>\n";
 const std::string FILE_BLOCK_GENETICS = "\t<m_genetics>\n";
 const std::string FILE_BLOCK_EXPRESSIONS = "\t\t<m_expressions>\n";
 const std::string FILE_BLOCK_POLY = "\t\t\t<m_poly>\n";
@@ -98,6 +104,7 @@ const std::string FILE_BLOCK_INDEX_STRIPPED = "\t<index>";
 const std::string FILE_BLOCK_TOTAL_STABLE_TIME_STRIPPED = "\t<m_totalStableTime>";
 const std::string FILE_BLOCK_NUM_SIMULATIONS_STRIPPED = "\t<m_numSimulations>";
 const std::string FILE_BLOCK_TOTAL_ZMP_DISTANCE_STRIPPED = "\t<m_totalZMPDistance>";
+const std::string FILE_BLOCK_TOTAL_TRANSLATION_X_STRIPPED = "\t<m_translationX>";
 const std::string FILE_BLOCK_GENETICS_STRIPPED = "\t<m_genetics>";
 const std::string FILE_BLOCK_EXPRESSIONS_STRIPPED = "\t\t<m_expressions>";
 const std::string FILE_BLOCK_POLY_STRIPPED = "\t\t\t<m_poly>";

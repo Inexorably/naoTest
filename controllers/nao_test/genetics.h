@@ -81,6 +81,9 @@ struct Organism {
     // The TOTAL zmp distance from 0, 0, ie if zmp is at 1, 1 for 2 seconds, the
     // m_totalZMPDistance value would be sqrt(2)*2.  Units are meters.
     double m_totalZMPDistance;
+    
+    // Total translation in x.
+    double m_translationX;
    
     // Defining comparison operators of organism for sorting / pruning purposes.
     // Compares by getFitness().

@@ -191,6 +191,7 @@ double Organism::getFitness() const {
   // We base the fitness score on the following components.
   double timeComponent = m_totalStableTime/static_cast<double>(m_numSimulations);
   double zmpComponent = (m_totalStableTime*sqrt(pow(FOOT_WIDTH, 2)+pow(FOOT_LENGTH, 2))-m_totalZMPDistance)/static_cast<double>(m_numSimulations);
+  double translationXComponent = 15*m_translationX/static_cast<double>(m_numSimulations);
   
   // If we exceed the transition time, greatly increase the zmp component weighting to
   // encourage the robot to minimize zmp.
@@ -198,7 +199,7 @@ double Organism::getFitness() const {
     zmpComponent = zmpComponent * FITNESS_WEIGHT_ZMP_TRANSITION_COEF;
   }
   
-  return (timeComponent + zmpComponent);
+  return FITNESS_WEIGHT_TIME_COEF*timeComponent + FITNESS_WEIGHT_TIME_ZMP*zmpComponent + FITNESS_WEIGHT_TRANSLATION_X_COEF*translationXComponent;
 }
 
 // Defining comparison operators of organism for sorting / pruning purposes.
@@ -228,6 +229,8 @@ void Organism::save(const std::string& filename) const {
   outfile << "\t\t" << std::to_string(m_numSimulations) << '\n';
   outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
   outfile << "\t\t" << std::to_string(m_totalZMPDistance) << '\n';
+  outfile << FILE_BLOCK_TOTAL_TRANSLATION_X;
+  outfile << "\t\t" << std::to_string(m_translationX) << '\n';
 
   // Write each organisms m_genetics, of size NUM_OUTPUT_VARS.
   outfile << FILE_BLOCK_GENETICS;
@@ -381,6 +384,8 @@ void Population::save(const std::string& filename) const {
     outfile << "\t\t" << std::to_string(m_organisms[i].m_numSimulations) << '\n';
     outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
     outfile << "\t\t" << std::to_string(m_organisms[i].m_totalZMPDistance) << '\n';
+    outfile << FILE_BLOCK_TOTAL_TRANSLATION_X;
+    outfile << "\t\t" << std::to_string(m_organisms[i].m_translationX) << '\n';
 
     // Write each organisms m_genetics, of size NUM_OUTPUT_VARS.
     outfile << FILE_BLOCK_GENETICS;
@@ -560,6 +565,21 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
          m_organisms[organismTicker].m_totalZMPDistance = std::stod(line);
        }
        //std::cout << line << ": recording total zmp distance" << std::endl;
+       continue;
+     }
+     
+      // Get and set m_translationX.
+     if (line == FILE_BLOCK_TOTAL_TRANSLATION_X_STRIPPED) {
+       // Get the value contained in the next line, strip the \t and \n chars,
+       // and set the m_totalStableTime value.
+       std::getline(infile, line);
+       line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+       line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+       // If ignoreHistory is true, we don't load the m_translationX value.
+       if (!ignoreHistory) {
+         m_organisms[organismTicker].m_translationX = std::stod(line);
+       }
+       //std::cout << line << ": recording total translation x distance" << std::endl;
        continue;
      }
      
