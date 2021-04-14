@@ -282,9 +282,16 @@ void Organism::save(const std::string& filename) const {
 ///////////////// Population /////////////////////////////////
 
 // Initialize a population with n random organisms, i input vars, and o output vars.
-Population::Population(const int& n, const int& i, const int& o) : m_numInputVars(i), m_numOutputVars(o) {
+// TODO: Check that n is a multiple of 4.
+Population::Population(const int& n, const int& i, const int& o) : m_numInputVars(i), m_numOutputVars(o), m_numOrganisms(n) {
   m_generation = 0;
   m_chanceMutation = 1/static_cast<double>(m_numInputVars * m_numOutputVars);
+  
+  // The population size must be a multiple of 4, due to the mutation and repoduction functions working
+  // on the best half of the population each generation.
+  if (n%4 != 0) {
+    std::cout << "Population::Population(const int& n, const int& i, const int& o): n must be a multiple of 4.\n";
+  }
   
   for (int i = 0; i < n; i++) {
     m_organisms.push_back(Organism(m_numInputVars, m_numOutputVars));
@@ -319,7 +326,7 @@ void Population::reproduceOrganisms() {
   sortOrganisms();
 }
 
-// Copy and mutate random members until m_organsisms.size() + number of mutated members == POPULATION_SIZE.
+// Copy and mutate random members until m_organsisms.size() + number of mutated members == m_numOrganisms.
 // Then, append the mutated members to m_organsisms.
 void Population::mutateOrganisms() {
   // Create a vector to store the mutated copies.
@@ -331,7 +338,7 @@ void Population::mutateOrganisms() {
   std::uniform_int_distribution<int> distI(0, m_organisms.size());
 
   // While we do not have enough organisms for the population size ...
-  while (m_organisms.size() + mutations.size() < POPULATION_SIZE) {
+  while (m_organisms.size() + mutations.size() < m_numOrganisms) {
     // Create a copy of a random organism in the population.
     Organism copy = m_organisms[distI(mt)];
     

@@ -48,11 +48,6 @@ const int EXPRESSION_CONST_EXP_MIN = 0;
 const double FITNESS_WEIGHT_ZMP_TRANSITION_TIME = 30;
 const double FITNESS_WEIGHT_ZMP_TRANSITION_COEF = 10;
 
-// Number of organisms in population.  MUST BE MULTIPLE OF 4.
-// TODO: General integrity function, check is multiple of 4.
-// TODO: Move into Population struct.
-const int POPULATION_SIZE = 1000;
-
 /////////////////////////////////////// File constants ///////////////////////////////////////////////
 
 // Default population filename.
@@ -62,7 +57,7 @@ const std::string DEFAULT_POPULATION_FILENAME = "pops/population.pop";
 const std::string FILE_BLOCK_POPULATION = "<population>\n";
 const std::string FILE_BLOCK_RUNTIME = "\t<runtime>\n";
 const std::string FILE_BLOCK_GENERATION = "\t<generation>\n";
-const std::string FILE_BLOCK_POPULATION_SIZE = "\t<size>\n";
+const std::string FILE_BLOCK_POPULATION_SIZE = "\t<m_numOrganisms>\n";
 const std::string FILE_BLOCK_NUM_INPUT_VARS = "\t<m_numInputVars>\n";
 const std::string FILE_BLOCK_NUM_OUTPUT_VARS = "\t<m_numOutputVars>\n";
 const std::string FILE_BLOCK_ORGANISM = "<organism>\n";
@@ -82,7 +77,7 @@ const std::string FILE_BLOCK_EXP = "\t\t\t<m_exp>\n";
 // comparisons.
 const std::string FILE_BLOCK_POPULATION_STRIPPED = "<population>";
 const std::string FILE_BLOCK_RUNTIME_STRIPPED = "\t<runtime>";
-const std::string FILE_BLOCK_POPULATION_SIZE_STRIPPED = "\t<size>";
+const std::string FILE_BLOCK_POPULATION_SIZE_STRIPPED = "\t<m_numOrganisms>";
 const std::string FILE_BLOCK_NUM_INPUT_VARS_STRIPPED = "\t<m_numInputVars>";
 const std::string FILE_BLOCK_NUM_OUTPUT_VARS_STRIPPED = "\t<m_numOutputVars>";
 const std::string FILE_BLOCK_ORGANISM_STRIPPED = "<organism>";

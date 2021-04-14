@@ -144,7 +144,7 @@ int runEvolutions(int argc, char **argv) {
     for (Organism& o : p.m_organisms) {
       // Print progress to console every 10% of the current population.
       progressTickerA++;
-      if (progressTickerA > POPULATION_SIZE/10) {
+      if (progressTickerA > p.m_numOrganisms/10) {
         progressTickerB++;
         progressTickerA = 0;
         std::cout << "Current generation (" << p.m_generation << ") progress: " << progressTickerB*10 << "%\n";
@@ -248,7 +248,7 @@ int runEvolutions(int argc, char **argv) {
     
     // Save best performing half of population (POPULATION_SIZE/2).
     std::cout << "Pruning weakest half of population.\n";
-    p.m_organisms.erase(p.m_organisms.begin() + POPULATION_SIZE/2, p.m_organisms.end());
+    p.m_organisms.erase(p.m_organisms.begin() + p.m_numOrganisms/2, p.m_organisms.end());
     
     // Breed the best performing half of the population (POPULATION_SIZE/2/2 == POPULATION_SIZE/4).
     std::cout << "Breeding population.\n";

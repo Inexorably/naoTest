@@ -127,6 +127,10 @@ struct Population {
   // Mutation probability between 0 to 1 for a given gene.
   double m_chanceMutation;
   
+  // The population size.  This is the size of m_organisms, and we store this for when we are manipulating
+  // m_organisms.
+  unsigned int m_numOrganisms;
+  
   // Sort the m_organisms vector using Organism::operator<.
   void sortOrganisms();
   
