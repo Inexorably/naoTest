@@ -39,9 +39,7 @@ struct Expression {
 
 // A generic nonlinear gene comprised of polynomial, sin, cos, and exp terms.
 // The genetics of an organism.  Returns a value based on the m_numInputVars input variables.
-class Gene {
-  public:
-  
+struct Gene {  
   // Construct a Gene with i (m_numInputVars) expression objects in m_expressions.
   Gene(const int& i);
   
@@ -51,20 +49,29 @@ class Gene {
   
   // Takes the current values of the input variables, and returns the output per m_expressions.
   // Takes a vector of doubles of size m_numInputVars.
-  // Returns a double so that in derived classes we can return multiple values.
-  virtual std::vector<double> calculateValue(const std::vector<double>& x) const;
-  
-  // The Gene type, as we can have different types of genes (ie GaitGene) through polymorphism.
-  // If m_geneType == 1: Gene
-  // If m_geneType == 2: GaitGene
-  int m_geneType;
-  
-  //////////////////// Standard Gene member var /////////////////////////
+  double calculateValue(const std::vector<double>& x) const;
   
   // One Expression per variable, so size m_numInputVars vector.
   std::vector<Expression> m_expressions;
+};
+
+// The gait form of a gene, per equation 14 in https://journals.sagepub.com/doi/full/10.5772/58845.
+// See equation image in op of https://github.com/Inexorably/naoTest/issues/12.
+struct GaitGene {
+  // Construct a Gene with i (m_numInputVars) expression objects in m_expressions.
+  // This is a CPG / gait generator, so this does depends on input alpha, time t, and the index ind
+  // We throw an error if input variables are not set to 3.  Note that we still check, 
+  // as input variables can be set on Population level to m_numInputVars in Population constructor.
+  GaitGene(const int& i);
   
-  //////////////////// Standard GaitGene member var /////////////////////////
+  // Note that we accept an x vector to match the style of the Gene class, but the vector
+  // should be of size 3 as per our comments on the GaitGene constructor.
+  // ie, the input should be alpha, time t, and the index of the desired variable (varying from 1 to 6).
+  std::vector<double> calculateValue(const std::vector<double>& x) const;
+  
+  // Gene needs to know how many input variables in order to push back the correct
+  // number of Expression objects onto m_expressions.
+  int m_numInputVars;
   
   // The variables of interest are:
   /* A1
@@ -78,23 +85,6 @@ class Gene {
   // Note that we define this in the top level Gene class so that we can push different types of Genes
   // on an organism level.
   std::vector<double> m_constants;
-};
-
-// The gait form of a gene, per equation 14 in https://journals.sagepub.com/doi/full/10.5772/58845.
-// See equation image in op of https://github.com/Inexorably/naoTest/issues/12.
-class GaitGene : public Gene {
-  public:
-
-  // Construct a Gene with i (m_numInputVars) expression objects in m_expressions.
-  // This is a CPG / gait generator, so this does depends on input alpha, time t, and the index ind
-  // We throw an error if input variables are not set to 3.  Note that we still check, 
-  // as input variables can be set on Population level to m_numInputVars in Population constructor.
-  GaitGene(const int& i);
-  
-  // Note that we accept an x vector to match the style of the Gene class, but the vector
-  // should be of size 3 as per our comments on the GaitGene constructor.
-  // ie, the input should be alpha, time t, and the index of the desired variable (varying from 1 to 6).
-  std::vector<double> calculateValue(const std::vector<double>& x) const;
 };
 
 // The individual organisms of a population can mutate and reproduce.

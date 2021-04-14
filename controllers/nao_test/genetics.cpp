@@ -72,13 +72,11 @@ Gene::Gene(const int& i) : m_numInputVars(i) {
     Expression temp;         // Default constructor creates a random expression.
     m_expressions.push_back(temp);
   }
-  
-  m_geneType = 1;
 }
 
 // Takes the current values of the input variables, and returns the output per m_expressions.
 // Takes a vector of doubles of size m_numInputVars.
-std::vector<double> Gene::calculateValue(const std::vector<double>& x) const {
+double Gene::calculateValue(const std::vector<double>& x) const {
   // TODO: Check for case where x.size() != m_numInputVars.
 
   // The value to be returned.
@@ -123,9 +121,7 @@ std::vector<double> Gene::calculateValue(const std::vector<double>& x) const {
     
     //std::cout << "exp: " << result << std::endl;
   }
-  std::vector<double> temp;
-  temp.push_back(result);
-  return temp;
+  return result;
 }
 
 ///////////////// GaitGene /////////////////////////////////
@@ -134,12 +130,10 @@ std::vector<double> Gene::calculateValue(const std::vector<double>& x) const {
 // This is a CPG / gait generator, so this does depends on input alpha, time t, and the index ind
 // We throw an error if input variables are not set to 3.  Note that we still check, 
 // as input variables can be set on Population level to m_numInputVars in Population constructor.
-GaitGene::GaitGene(const int& i) : Gene(i) {
+GaitGene::GaitGene(const int& i) : m_numInputVars(i) {
   if (i != 3){
     std::cout << "GaitGene::GaitGene(const int& i): Warning: i != 3 for GaitGene input variables.\n";
   }
-  
-  m_geneType = 2;
   
   // Create some random devices to generate values.
   std::random_device rd;
@@ -190,7 +184,7 @@ std::vector<double> GaitGene::calculateValue(const std::vector<double>& x) const
 // Construct an organism with o (m_numOutputVars) Gene members in m_genetics.
 Organism::Organism(const int& i, const int& o) : m_numInputVars(i), m_numOutputVars(o) {
   for (int i = 0; i < m_numOutputVars; i++) { 
-    GaitGene temp(m_numInputVars);
+    Gene temp(m_numInputVars);
     m_genetics.push_back(temp);
   }
   
@@ -300,60 +294,42 @@ void Organism::save(const std::string& filename) const {
     
   // Loop through the genetics of each organism.
   for (Gene g : m_genetics) {
-    // Write the gene type.
-    outfile << FILE_BLOCK_GENE_TYPE;
-    outfile << "\t\t\t" << std::to_string(g.m_geneType) << '\n';
+    // Write the expressions of each gene.
+    outfile << FILE_BLOCK_EXPRESSIONS;
   
-    // What we write depends on the Gene type.
-    // If it is a standard nonlinear gene:
-    if (g.m_geneType == 1) {
-      // Write the expressions of each gene.
-      outfile << FILE_BLOCK_EXPRESSIONS;
-    
-      // Loop through the expressions and write the variable values.
-      // m_expressions is of size m_numInputVars.
-      for (Expression e : g.m_expressions) {
-        // Loop through and write m_poly coeffs
-        outfile << FILE_BLOCK_POLY;
-        for (double d : e.m_poly) {
-          outfile << "\t\t\t\t" << std::to_string(d) << '\n';
-        }
-        
-        // Loop through and write m_log coeffs
-        outfile << FILE_BLOCK_LOG;
-        for (double d : e.m_log) {
-          outfile << "\t\t\t\t" << std::to_string(d) << '\n';
-        }
-        
-        // Loop through and write m_sin coeffs
-        outfile << FILE_BLOCK_SIN;
-        for (double d : e.m_sin) {
-          outfile << "\t\t\t\t" << std::to_string(d) << '\n';
-        }
-        
-        // Loop through and write m_cos coeffs
-        outfile << FILE_BLOCK_COS;
-        for (double d : e.m_cos) {
-          outfile << "\t\t\t\t" << std::to_string(d) << '\n';
-        }
-        
-        // Loop through and write m_exp coeffs
-        outfile << FILE_BLOCK_EXP;
-        for (double d : e.m_exp) {
-          outfile << "\t\t\t\t" << std::to_string(d) << '\n';
-        }
+    // Loop through the expressions and write the variable values.
+    // m_expressions is of size m_numInputVars.
+    for (Expression e : g.m_expressions) {
+      // Loop through and write m_poly coeffs
+      outfile << FILE_BLOCK_POLY;
+      for (double d : e.m_poly) {
+        outfile << "\t\t\t\t" << std::to_string(d) << '\n';
       }
-    }
-    // If this is a gait gene:
-    else if (g.m_geneType == 2) {
-      outfile << FILE_BLOCK_CONSTANTS;
       
-      // Loop through the constants and write the values.
-      // m_constants is of size m_numInputVars.
-      for (double d : g.m_constants) {
-          outfile << "\t\t\t\t" << std::to_string(d) << '\n';  
+      // Loop through and write m_log coeffs
+      outfile << FILE_BLOCK_LOG;
+      for (double d : e.m_log) {
+        outfile << "\t\t\t\t" << std::to_string(d) << '\n';
       }
-    }    
+      
+      // Loop through and write m_sin coeffs
+      outfile << FILE_BLOCK_SIN;
+      for (double d : e.m_sin) {
+        outfile << "\t\t\t\t" << std::to_string(d) << '\n';
+      }
+      
+      // Loop through and write m_cos coeffs
+      outfile << FILE_BLOCK_COS;
+      for (double d : e.m_cos) {
+        outfile << "\t\t\t\t" << std::to_string(d) << '\n';
+      }
+      
+      // Loop through and write m_exp coeffs
+      outfile << FILE_BLOCK_EXP;
+      for (double d : e.m_exp) {
+        outfile << "\t\t\t\t" << std::to_string(d) << '\n';
+      }
+    }   
   }
 }
 

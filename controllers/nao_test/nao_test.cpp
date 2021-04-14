@@ -187,8 +187,7 @@ int runEvolutions(int argc, char **argv) {
           // Generate each output variable based on the input (ie, loop through the system of equations).
           for (int j = 0; j < p.m_numOutputVars; j++) {
             // Find the respective motor input position and clamp it to the min:max bounds of that motor.
-            std::vector<double> inputV = o.m_genetics[j].calculateValue(x);
-            double input = inputV[0];
+            double input = o.m_genetics[j].calculateValue(x);
             input = clamp(input, controlMotors[j]->getMinPosition(), controlMotors[j]->getMaxPosition());   
             controlMotors[j]->setPosition(input);
             
@@ -338,20 +337,14 @@ void writePopulationInfo(const std::string& outfilename, const int& n, const int
 }
 
 int main(int argc, char **argv) {
-  Organism o(3, 1);
-  o.save("testerino");
-  
+
   std::vector<double> test = {1.0, 1.0, 1.0};
   
   GaitGene please(3);
-  please.calculateValue(test);
+  test = please.calculateValue(test);
   
-  std::cout << "size: " << o.m_genetics.size() << std::endl;
-  for (Gene g : o.m_genetics) {
-    std::vector<double> values = g.calculateValue(test);
-    for (double d : values) {
-      std::cout << d << std::endl;
-    }
+  for (double d : test) {
+    std::cout << d << std::endl;
   }
   
   std::cout << "dddd" << std::endl;
