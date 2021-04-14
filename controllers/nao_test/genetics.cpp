@@ -125,6 +125,19 @@ double Gene::calculateValue(const std::vector<double>& x) const {
   return result;
 }
 
+///////////////// GaitGene /////////////////////////////////
+
+// Construct a Gene with i (m_numInputVars) expression objects in m_expressions.
+// This is a CPG / gait generator, so this does not depend on input variables, but is rather
+// a function of the gene weights (constants) and time t.  We throw an error if input variables
+// are not set to zero.  Note that we still check, as input variables can be set on Population level
+// to m_numInputVars in Population constructor.
+GaitGene::GaitGene(const int& i) : m_numInputVars(i) {
+  if (i != 1 /*Written out for clearness*/){
+    std::cout << "GaitGene::GaitGene(const int& i): Warning: i != 1 for GaitGene input variables.\n";
+  }
+}
+
 ///////////////// Organism /////////////////////////////////
 
 // Construct an organism with o (m_numOutputVars) Gene members in m_genetics.
