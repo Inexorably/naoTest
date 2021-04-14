@@ -72,6 +72,8 @@ Gene::Gene(const int& i) : m_numInputVars(i) {
     Expression temp;         // Default constructor creates a random expression.
     m_expressions.push_back(temp);
   }
+  
+  m_geneType = 1;
 }
 
 // Takes the current values of the input variables, and returns the output per m_expressions.
@@ -128,13 +130,24 @@ double Gene::calculateValue(const std::vector<double>& x) const {
 ///////////////// GaitGene /////////////////////////////////
 
 // Construct a Gene with i (m_numInputVars) expression objects in m_expressions.
-// This is a CPG / gait generator, so this does not depend on input variables, but is rather
-// a function of the gene weights (constants) and time t.  We throw an error if input variables
-// are not set to zero.  Note that we still check, as input variables can be set on Population level
-// to m_numInputVars in Population constructor.
-GaitGene::GaitGene(const int& i) : m_numInputVars(i) {
-  if (i != 1 /*Written out for clearness*/){
-    std::cout << "GaitGene::GaitGene(const int& i): Warning: i != 1 for GaitGene input variables.\n";
+// This is a CPG / gait generator, so this does depends on a single input variable alpha and time t.  
+// We throw an error if input variables are not set to 2.  Note that we still check, 
+// as input variables can be set on Population level to m_numInputVars in Population constructor.
+GaitGene::GaitGene(const int& i) : Gene(i), m_numInputVars(i) {
+  if (i != 2){
+    std::cout << "GaitGene::GaitGene(const int& i): Warning: i != 2 for GaitGene input variables.\n";
+  }
+  
+  m_geneType = 2;
+  
+  // Create some random devices to generate values.
+  std::random_device rd;
+  std::mt19937 mt(rd());
+  std::uniform_real_distribution<double> distD(GAITGENE_CONST_MIN, GAITGENE_CONST_MAX);
+  
+  // Fill the m_constants vector with some random values.
+  for (unsigned int j = 0; j < 5; ++j){
+    m_constants.push_back(distD(mt));
   }
 }
 

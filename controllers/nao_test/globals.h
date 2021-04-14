@@ -41,6 +41,10 @@ const double EXPRESSION_CONST_MAX = 2;
 const int EXPRESSION_CONST_EXP_MAX = 5;
 const int EXPRESSION_CONST_EXP_MIN = 0;
 
+// GaitGene constant min and max values.
+const double GAITGENE_CONST_MIN = -10;
+const double GAITGENE_CONST_MAX = 10;
+
 // FITNESS_WEIGHT_ZMP_TRANSITION_TIME: average stable time at which we transition
 // to highly valuing zmp stability.  To have any affect, must be less than SIMULATION_TIME_MAX.
 // FITNESS_WEIGHT_ZMP_TRANSITION_COEF: the multiplier by which we multiply the zmp 

@@ -38,7 +38,9 @@ struct Expression {
 };
 
 // The genetics of an organism.  Returns a value based on the m_numInputVars input variables.
-struct Gene {
+class Gene {
+  public:
+  
   // Construct a Gene with i (m_numInputVars) expression objects in m_expressions.
   Gene(const int& i);
 
@@ -51,21 +53,48 @@ struct Gene {
   
   // Takes the current values of the input variables, and returns the output per m_expressions.
   // Takes a vector of doubles of size NUM_INPUT_VARS.
-  virtual double calculateValue(const std::vector<double>& x) const;
+  double calculateValue(const std::vector<double>& x) const;
+  
+  // The Gene type, as we can have different types of genes (ie GaitGene) through polymorphism.
+  // If m_geneType == 1: Gene
+  // If m_geneType == 2: GaitGene
+  int m_geneType;
 };
 
 // The gait form of a gene, per equation 14 in https://journals.sagepub.com/doi/full/10.5772/58845.
 // See equation image in op of https://github.com/Inexorably/naoTest/issues/12.
-struct GaitGene : Gene {
+class GaitGene : Gene {
+  public:
+
   // Construct a Gene with i (m_numInputVars) expression objects in m_expressions.
-  // This is a CPG / gait generator, so this does depends on a single input variables and time t.  
-  // We throw an error if input variables are not set to 1.  Note that we still check, 
-  //as input variables can be set on Population level to m_numInputVars in Population constructor.
+  // This is a CPG / gait generator, so this does depends on a single input variable alpha and time t.  
+  // We throw an error if input variables are not set to 2.  Note that we still check, 
+  // as input variables can be set on Population level to m_numInputVars in Population constructor.
   GaitGene(const int& i);
+
+  // Keeping members consistent with Gene.
+  int m_numInputVars;
+  
+  // The Gene type, as we can have different types of genes (ie GaitGene) through polymorphism.
+  // If m_geneType == 1: Gene
+  // If m_geneType == 2: GaitGene
+  int m_geneType;
   
   // Note that we accept an x vector to match the style of the Gene class, but the vector
-  // should be of size zero as per our comments on the GaitGene constructor.
-  double calculateValue(const std::vector<double>& empty) const;
+  // should be of size 1 as per our comments on the GaitGene constructor.
+  // ie, the input should simply be alpha.
+  double calculateValue(const std::vector<double>& x) const;
+  
+  // The variables of interest are:
+  /* A1
+   * A2 = 0
+   * A3
+   * A4
+   * A5  
+   */
+   // We store these constants in m_constants.
+   // Note that omega = 2pi*alpha (the input), and that K_r = alpha.
+   std::vector<double> m_constants;
 };
 
 // The individual organisms of a population can mutate and reproduce.
