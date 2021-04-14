@@ -65,23 +65,25 @@ Expression::Expression() {
 
 ///////////////// Gene /////////////////////////////////
 
-// Construct a genome with 3 expression objects in m_expressions.
-Gene::Gene() {
-  // Push back NUM_INPUT_VARS subexpressions - one per input variable.
-  for (int i = 0; i < NUM_INPUT_VARS; i++) { 
+// Construct a genome with i (m_numInputVars) expression objects in m_expressions.
+Gene::Gene(const int& i) : m_numInputVars(i) {
+  // Push back m_numInputVars subexpressions - one per input variable.
+  for (int i = 0; i < m_numInputVars; i++) { 
     Expression temp;         // Default constructor creates a random expression.
     m_expressions.push_back(temp);
   }
 }
 
 // Takes the current values of the input variables, and returns the output per m_expressions.
-// Takes a vector of doubles of size NUM_INPUT_VARS.
+// Takes a vector of doubles of size m_numInputVars.
 double Gene::calculateValue(const std::vector<double>& x) const {
+  // TODO: Check for case where x.size() != m_numInputVars.
+
   // The value to be returned.
   double result = 0;
   
   // Iterate through the input variables as per the subexpressions.
-  for (int i = 0; i < NUM_INPUT_VARS; i++) {
+  for (int i = 0; i < m_numInputVars; i++) {
     // For each input variable, apply the various nonlinear expressions.
     
     // poly
@@ -125,26 +127,28 @@ double Gene::calculateValue(const std::vector<double>& x) const {
 
 ///////////////// Organism /////////////////////////////////
 
-// Construct an organism with NUM_OUTPUT_VARS Gene members in m_genetics.
-Organism::Organism() {
-  for (int i = 0; i < NUM_OUTPUT_VARS; i++) { 
-    Gene temp;
+// Construct an organism with o (m_numOutputVars) Gene members in m_genetics.
+Organism::Organism(const int& i, const int& o) : m_numInputVars(i), m_numOutputVars(o) {
+  for (int i = 0; i < m_numOutputVars; i++) { 
+    Gene temp(m_numInputVars);
     m_genetics.push_back(temp);
   }
+  
+  m_chanceMutation = 1/static_cast<double>(m_numInputVars * m_numOutputVars);
   
   m_totalStableTime = 0;
   m_numSimulations = 0;
   m_totalZMPDistance = 0;
 }
 
-// Mutate the current organism.  Each expression has a MUTATION_CHANCE chance of changing.
+// Mutate the current organism.  Each expression has a chanceMutation chance of changing.
 void Organism::mutate() {
   //Loop through the m_genetics and m_expressions and randomly change the expressions.
-  // m_genetics is of size NUM_OUTPUT_VARS, and each Gene g.m_expressions is of size NUM_INPUT_VARS.
+  // m_genetics is of size m_numOutputVars, and each Gene g.m_expressions is of size m_numInputVars.
   for (Gene& g : m_genetics) {
     for (Expression& e : g.m_expressions) {
       // Randomly replace one of the expressions with a new one.
-      if (trueWithProbability(MUTATION_CHANCE)) {
+      if (trueWithProbability(m_chanceMutation)) {
         e = Expression();
       }
     }
@@ -158,12 +162,12 @@ Organism Organism::reproduce(const Organism& partner) const {
   // Create the child object to be returned.
   // TODO: Can optimize by adding constructor that skips rng coefficient creation since
   // immediately overwritten here, but performance gains are likely negligible.
-  Organism child;
+  Organism child(m_numInputVars, m_numOutputVars);
   
-  // Loop through the genetics (NUM_OUTPUT_VARS many) of the child object.
-  for (int i = 0; i < NUM_OUTPUT_VARS; i++) {
-    // Loop through the expressions (NUM_INPUT_VARS many) in each gene.
-    for (int j = 0; j < NUM_INPUT_VARS; j++) {
+  // Loop through the genetics (m_numOutputVars many) of the child object.
+  for (int i = 0; i < m_numOutputVars; i++) {
+    // Loop through the expressions (m_numInputVars many) in each gene.
+    for (int j = 0; j < m_numInputVars; j++) {
       // For each expression, set the child expression to one of the parent's.
       // If true with 50% chance, set to parent one (*this).
       if (trueWithProbability(0.5)) {
@@ -220,8 +224,10 @@ void Organism::save(const std::string& filename) const {
   outfile.open(filename);
 
   outfile << FILE_BLOCK_ORGANISM;
-  outfile << FILE_BLOCK_INDEX;
-  outfile << "\t\t" << std::to_string(0) << '\n';
+  outfile << FILE_BLOCK_NUM_INPUT_VARS;
+  outfile << "\t\t" << std::to_string(m_numInputVars) << '\n';
+  outfile << FILE_BLOCK_NUM_OUTPUT_VARS;
+  outfile << "\t\t" << std::to_string(m_numOutputVars) << '\n';
   outfile << FILE_BLOCK_TOTAL_STABLE_TIME;
   outfile << "\t\t" << std::to_string(m_totalStableTime) << '\n';
   outfile << FILE_BLOCK_NUM_SIMULATIONS;
@@ -229,7 +235,7 @@ void Organism::save(const std::string& filename) const {
   outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
   outfile << "\t\t" << std::to_string(m_totalZMPDistance) << '\n';
 
-  // Write each organisms m_genetics, of size NUM_OUTPUT_VARS.
+  // Write each organisms m_genetics, of size m_numOutputVars.
   outfile << FILE_BLOCK_GENETICS;
     
   // Loop through the genetics of each organism.
@@ -238,7 +244,7 @@ void Organism::save(const std::string& filename) const {
     outfile << FILE_BLOCK_EXPRESSIONS;
     
     // Loop through the expressions and write the variable values.
-    // m_expressions is of size NUM_INPUT_VARS.
+    // m_expressions is of size m_numInputVars.
     for (Expression e : g.m_expressions) {
       // Loop through and write m_poly coeffs
       outfile << FILE_BLOCK_POLY;
@@ -275,20 +281,13 @@ void Organism::save(const std::string& filename) const {
 
 ///////////////// Population /////////////////////////////////
 
-// Initialize a population with n random organisms.
-Population::Population(const int& n) {
+// Initialize a population with n random organisms, i input vars, and o output vars.
+Population::Population(const int& n, const int& i, const int& o) : m_numInputVars(i), m_numOutputVars(o) {
   m_generation = 0;
+  m_chanceMutation = 1/static_cast<double>(m_numInputVars * m_numOutputVars);
+  
   for (int i = 0; i < n; i++) {
-    m_organisms.push_back(Organism());
-  }
-}
-
-// Create a population with POPULATION_SIZE random organisms.
-Population::Population() {
-  m_generation = 0;
-  m_runtime = 0;
-  for (int i = 0; i < POPULATION_SIZE; i++) {
-    m_organisms.push_back(Organism());
+    m_organisms.push_back(Organism(m_numInputVars, m_numOutputVars));
   }
 }
 
@@ -366,9 +365,9 @@ void Population::save(const std::string& filename) const {
   outfile << FILE_BLOCK_POPULATION_SIZE;
   outfile <<"\t\t" << std::to_string(m_organisms.size()) << '\n';
   outfile << FILE_BLOCK_NUM_INPUT_VARS;
-  outfile << "\t\t" << std::to_string(NUM_INPUT_VARS) << '\n';
+  outfile << "\t\t" << std::to_string(m_numInputVars) << '\n';
   outfile << FILE_BLOCK_NUM_OUTPUT_VARS;
-  outfile << "\t\t" << std::to_string(NUM_OUTPUT_VARS) << '\n';
+  outfile << "\t\t" << std::to_string(m_numOutputVars) << '\n';
   
   // Output each organism to the file.
   for (unsigned int i = 0; i < m_organisms.size(); i++) {
@@ -382,7 +381,7 @@ void Population::save(const std::string& filename) const {
     outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
     outfile << "\t\t" << std::to_string(m_organisms[i].m_totalZMPDistance) << '\n';
 
-    // Write each organisms m_genetics, of size NUM_OUTPUT_VARS.
+    // Write each organisms m_genetics, of size m_numOutputVars.
     outfile << FILE_BLOCK_GENETICS;
     
     // Loop through the genetics of each organism.
@@ -391,7 +390,7 @@ void Population::save(const std::string& filename) const {
       outfile << FILE_BLOCK_EXPRESSIONS;
       
       // Loop through the expressions and write the variable values.
-      // m_expressions is of size NUM_INPUT_VARS.
+      // m_expressions is of size m_numInputVars.
       for (Expression e : g.m_expressions) {
         // Loop through and write m_poly coeffs
         outfile << FILE_BLOCK_POLY;
@@ -475,9 +474,9 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
   //Continue handling the header and skipping lines.
   std::getline(infile, line);        // <size>
   std::getline(infile, line);        // 1000
-  std::getline(infile, line);        // <NUM_INPUT_VARS>
+  std::getline(infile, line);        // <m_numInputVars>
   std::getline(infile, line);        // 6
-  std::getline(infile, line);        // <NUM_OUTPUT_VARS>
+  std::getline(infile, line);        // <m_numOutputVars>
   std::getline(infile, line);        // 10
   
   // organismTicker is the index of the current organism we are working on.  When we

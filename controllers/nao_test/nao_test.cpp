@@ -108,7 +108,7 @@ int runEvolutions(int argc, char **argv) {
   //////////////////////////////////////////////////////////////////////////
   
   // Generate an organism population of controllers.
-  Population p;
+  Population p(1000, 6, 10);
   
   // Load p from the default file.  If no such file exists or file is corrupted,
   // the random p created upon construction will not be changed.
@@ -185,7 +185,7 @@ int runEvolutions(int argc, char **argv) {
           std::vector<double> x = {zmplx, zmply, zmplxdt, zmplydt, zmplxd2t, zmplyd2t};
             
           // Generate each output variable based on the input (ie, loop through the system of equations).
-          for (int j = 0; j < NUM_OUTPUT_VARS; j++) {
+          for (int j = 0; j < p.m_numOutputVars; j++) {
             // Find the respective motor input position and clamp it to the min:max bounds of that motor.
             double input = o.m_genetics[j].calculateValue(x);
             input = clamp(input, controlMotors[j]->getMinPosition(), controlMotors[j]->getMaxPosition());   
@@ -278,11 +278,12 @@ int runEvolutions(int argc, char **argv) {
 // Column 2: Min stable time
 // Column 3: Mean stable time
 // Column 4: Max stable time
-void writePopulationInfo(const std::string& outfilename) {
+// TODO: Make not require known population size n, input vars i, and output vars o.
+void writePopulationInfo(const std::string& outfilename, const int& n, const int& i, const int&o) {
   std::cout << "Beginning historic data writing to: " << outfilename << std::endl;
 
   // Create a dummy population object.
-  Population p;
+  Population p(n, i, o);
   
   // Create the ofstream.
   std::ofstream outfile;

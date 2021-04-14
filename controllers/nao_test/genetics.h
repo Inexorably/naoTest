@@ -39,11 +39,15 @@ struct Expression {
 
 // The genetics of an organism.  Returns a value based on the NUM_INPUT_VARS input variables.
 struct Gene {
-  // Construct a genome with NUM_INPUT_VARS expression objects in m_expressions.
-  Gene();
+  // Construct a genome with i (m_numInputVars) expression objects in m_expressions.
+  Gene(const int& i);
 
   // One Expression per variable, so size NUM_INPUT_VARS vector.
   std::vector<Expression> m_expressions;
+  
+  // Gene needs to know how many input variables in order to push back the correct
+  // number of Expression objects onto m_expressions.
+  int m_numInputVars;
   
   // Takes the current values of the input variables, and returns the output per m_expressions.
   // Takes a vector of doubles of size NUM_INPUT_VARS.
@@ -53,8 +57,8 @@ struct Gene {
 
 // The individual organisms of a population can mutate and reproduce.
 struct Organism {
-    // Construct an organism with NUM_OUTPUT_VARS Gene members in m_genetics.
-    Organism();
+    // Construct an organism with o (m_numOutputVars) Gene members in m_genetics.
+    Organism(const int& i, const int& o);
 
     // Mutate the current organism.
     void mutate();
@@ -67,6 +71,15 @@ struct Organism {
     // So we have NUM_OUTPUT_VARS varying equations (genetics) each with
     // NUM_STATE_VARS input variables, ie vector is size NUM_OUTPUT_VARS.
     std::vector<Gene> m_genetics;
+    
+    // Same values as parent Population if organism is part of Population object.
+    // Number of input/output variables.  Moved inside the Population struct so that we can have multiple objects
+    // of differing input / outputs, which using globals for num_input/output vars prevented.
+    int m_numInputVars;
+    int m_numOutputVars;
+    
+    // Mutation probability between 0 to 1 for a given gene.
+    double m_chanceMutation;
     
     // The fitness of the organism, determined by average time before falling in simulation and
     // the average distance of zmp coordinates from the origin.
@@ -94,11 +107,8 @@ struct Organism {
 
 // Holds a population / generation of controllers (organisms).
 struct Population {
-  // Initialize a population with n random organisms.
-  Population(const int& n);
-  
-  // Create a population with POPULATION_SIZE random organisms.
-  Population();
+  // Initialize a population with n random organisms, i input vars, and o output vars.
+  Population(const int& n, const int& i, const int& o);
   
   // This will be kept in descending order.  > operator for organism will be defined.
   std::vector<Organism> m_organisms;
@@ -108,6 +118,14 @@ struct Population {
   
   // The total runtime in seconds of the population, including all preceeding generations.
   double m_runtime;
+  
+  // Number of input/output variables.  Moved inside the Population struct so that we can have multiple objects
+  // of differing input / outputs, which using globals for num_input/output vars prevented.
+  int m_numInputVars;
+  int m_numOutputVars;
+  
+  // Mutation probability between 0 to 1 for a given gene.
+  double m_chanceMutation;
   
   // Sort the m_organisms vector using Organism::operator<.
   void sortOrganisms();
