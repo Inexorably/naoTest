@@ -139,8 +139,8 @@ int runEvolutions(int argc, char **argv) {
     auto start = std::chrono::system_clock::now();
     
     // For each organism in the population, run the simulation in order to generate fitness values.
-    int progressTickerA = 0;   // For printing to console / debugging.
-    int progressTickerB = 0;
+    unsigned int progressTickerA = 0;   // For printing to console / debugging.
+    unsigned int progressTickerB = 0;
     for (Organism& o : p.m_organisms) {
       // Print progress to console every 10% of the current population.
       progressTickerA++;
