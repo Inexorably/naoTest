@@ -84,6 +84,9 @@ std::vector<Point> getZMPCoordinates (TouchSensor *fsrL, TouchSensor *fsrR) {
   if (std::isnan(temp.m_y))
     temp.m_y = 0;
     
+  // Set m_isSupporting.
+  temp.m_isSupporting = newtonLeft > newtonRight;
+    
   zmps.push_back(temp);
   
   // Right foot.
@@ -96,6 +99,7 @@ std::vector<Point> getZMPCoordinates (TouchSensor *fsrL, TouchSensor *fsrR) {
   if (std::isnan(temp.m_y))
     temp.m_y = 0;
     
+  temp.m_isSupporting = newtonLeft <= newtonRight;
   zmps.push_back(temp);
   
   return zmps; 

@@ -158,7 +158,6 @@ std::vector<double> GaitGene::calculateValue(const std::vector<double>& x) const
   double omega = 2*M_PI*alpha;
   
   // Find the relative angles.
-  std::cout << "Doing: " << -m_constants[0] << "*" << alpha << "*" << cos(omega*t) << std::endl;
   double q1 = -m_constants[0]*alpha*cos(omega*t);
   double q2 = m_constants[1]*cos(omega*t);
   double q3 = m_constants[2]*cos(omega*t);

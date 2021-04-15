@@ -19,6 +19,10 @@ using namespace webots;
 struct Point {
   double m_x;
   double m_y;
+  
+  // True if this point is holding the zmp coordinates for the supporting leg.
+  // Else false (ie leg is the gait leg).
+  bool m_isSupporting;
 };
 
 // Takes the left and right foot force sensors, and prints the values to console.
