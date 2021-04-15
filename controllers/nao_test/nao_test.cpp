@@ -336,23 +336,11 @@ void writePopulationInfo(const std::string& outfilename, const int& n, const int
   return;
 }
 
-int main(int argc, char **argv) {
-
-  std::vector<double> test = {1.0, 1.0, 1.0};
+int main(int argc, char **argv) {  
+  GaitPopulation po(20);
   
-  GaitGene please(3);
-  test = please.calculateValue(test);
-  
-  for (double d : test) {
-    std::cout << d << std::endl;
-  }
-  
-  std::cout << "dddd" << std::endl;
-  
-  for (int i = 0; i < 1000000; i++) {
-    double d = 3.24*5.795*3236;
-  }
-
+  po.load("testerino");
+  po.save("testerino2");
 
   // Evolve the controllers.  
   //runEvolutions(argc, argv);

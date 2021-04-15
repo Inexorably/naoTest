@@ -59,19 +59,13 @@ struct Gene {
 // See equation image in op of https://github.com/Inexorably/naoTest/issues/12.
 struct GaitGene {
   // Construct a Gene with i (m_numInputVars) expression objects in m_expressions.
-  // This is a CPG / gait generator, so this does depends on input alpha, time t, and the index ind
-  // We throw an error if input variables are not set to 3.  Note that we still check, 
-  // as input variables can be set on Population level to m_numInputVars in Population constructor.
-  GaitGene(const int& i);
+  // This is a CPG / gait generator, so this does depends on input alpha and time t.
+  GaitGene();
   
   // Note that we accept an x vector to match the style of the Gene class, but the vector
-  // should be of size 3 as per our comments on the GaitGene constructor.
-  // ie, the input should be alpha, time t, and the index of the desired variable (varying from 1 to 6).
+  // should be of size 2 as per our comments on the GaitGene constructor.
+  // ie, the input should be alpha and time t.
   std::vector<double> calculateValue(const std::vector<double>& x) const;
-  
-  // Gene needs to know how many input variables in order to push back the correct
-  // number of Expression objects onto m_expressions.
-  int m_numInputVars;
   
   // The variables of interest are:
   /* A1
@@ -136,6 +130,52 @@ struct Organism {
     void save(const std::string& filename) const;
 };
 
+// A version of the Organism struct with GaitGene members for gait controller evolution.
+struct GaitOrganism {
+    // Construct an organism with a single GaitGene member.
+    GaitOrganism();
+
+    // Mutate the current organism.
+    void mutate();
+    
+    // Creates a child organism with the genetics of *this and partner GaitOrganism.
+    GaitOrganism reproduce(const GaitOrganism& partner) const;
+    
+    // Holds the genetics of the organism.
+    GaitGene m_gaitGene;
+
+    // Same values as parent Population if organism is part of Population object.
+    // Number of input/output variables.  Moved inside the Population struct so that we can have multiple objects
+    // of differing input / outputs, which using globals for num_input/output vars prevented.
+    int m_numInputVars;
+    int m_numOutputVars;
+    
+    // Mutation probability between 0 to 1 for a given gene.
+    double m_chanceMutation;
+    
+    // The fitness of the organism, determined by average time before falling in simulation and
+    // the average distance of zmp coordinates from the origin.
+    double getFitness() const;
+    
+    // Total time stable accross all simulations, in seconds.
+    double m_totalStableTime;
+
+    // The number of times this controller has been simulated.
+    int m_numSimulations;
+    
+    // The TOTAL zmp distance from 0, 0, ie if zmp is at 1, 1 for 2 seconds, the
+    // m_totalZMPDistance value would be sqrt(2)*2.  Units are meters.
+    double m_totalZMPDistance;
+   
+    // Defining comparison operators of GaitOrganism for sorting / pruning purposes.
+    // Compares by getFitness().
+    bool operator < (const GaitOrganism& rhs) const;
+    bool operator > (const GaitOrganism& rhs) const;
+    
+    // Save the current organism to a file.
+    void save(const std::string& filename) const;
+};
+
 
 // Holds a population / generation of controllers (organisms).
 struct Population {
@@ -144,6 +184,61 @@ struct Population {
   
   // This will be kept in descending order.  > operator for organism will be defined.
   std::vector<Organism> m_organisms;
+  
+  // The current generation of this population.
+  int m_generation;
+  
+  // The total runtime in seconds of the population, including all preceeding generations.
+  double m_runtime;
+  
+  // Number of input/output variables.  Moved inside the Population struct so that we can have multiple objects
+  // of differing input / outputs, which using globals for num_input/output vars prevented.
+  int m_numInputVars;
+  int m_numOutputVars;
+  
+  // Mutation probability between 0 to 1 for a given gene.
+  double m_chanceMutation;
+  
+  // The population size.  This is the size of m_organisms, and we store this for when we are manipulating
+  // m_organisms.
+  unsigned int m_numOrganisms;
+  
+  // Sort the m_organisms vector using Organism::operator<.
+  void sortOrganisms();
+  
+  // Breed the current population with 2 partners creating 1 child organism and add the children to
+  // m_organisms.  Increases size of m_organisms by 50%.
+  void reproduceOrganisms();
+  
+  // Copy and mutate random members until m_organsisms.size() + number of mutated members == POPULATION_SIZE.
+  // Then, append the mutated members to m_organsisms.
+  void mutateOrganisms();
+  
+  // Saves the population to a given filename.
+  void save(const std::string& filename) const;
+  
+  // Saves the population to the default filename DEFAULT_POPULATION_FILENAME.
+  void save() const;
+  
+  // Loads the population from a given file.  If ignoreHistory is true, do not load the
+  // m_totalStableTime and m_numSimulation members from the file. 
+  void load(const std::string& filename, const bool& ignoreHistory);
+  
+  // Loads the population from a given file.
+  // TODO: Load validation such as confirming right population size etc.
+  void load(const std::string& filename);
+  
+  // Loads the population from the default filename DEFAULT_POPULATION_FILENAME.
+  void load();
+};
+
+// A population struct holding n GaitOrganisms.
+struct GaitPopulation {
+  // Initialize a GaitPopulation with n random organisms.
+  GaitPopulation(const int& n);
+  
+  // This will be kept in descending order.  > operator for organism will be defined.
+  std::vector<GaitOrganism> m_organisms;
   
   // The current generation of this population.
   int m_generation;
