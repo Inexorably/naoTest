@@ -84,6 +84,9 @@ std::vector<Point> getZMPCoordinates (TouchSensor *fsrL, TouchSensor *fsrR) {
   if (std::isnan(temp.m_y))
     temp.m_y = 0;
     
+  // Set m_isSupporting.
+  temp.m_isSupporting = newtonLeft > newtonRight;
+    
   zmps.push_back(temp);
   
   // Right foot.
@@ -96,9 +99,31 @@ std::vector<Point> getZMPCoordinates (TouchSensor *fsrL, TouchSensor *fsrR) {
   if (std::isnan(temp.m_y))
     temp.m_y = 0;
     
+  temp.m_isSupporting = newtonLeft <= newtonRight;
   zmps.push_back(temp);
   
   return zmps; 
+}
+
+// Take the pointer to the rotational field [rot_field->getSFRotation()], in axis-angle form.
+// Axis-angle form is format of unit x y z vector + rotation angle.
+// Return the euclidean rotational angles (in xy, xz, yz).
+// https://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToEuler/index.htm
+std::vector<double> getRotationalAngles(const double* rot) {
+  // Pull the values from rot.  Note that theta is in radians.
+  double x = rot[0];
+  double y = rot[1];
+  double z = rot[2];
+  double theta = rot[3];
+  
+  // heading rotation around y (in xz), attitude around z (in xy), bank around x (in yz).
+  double heading = atan2(y * sin(theta)- x * z * (1 - cos(theta)) , 1 - (pow(y,2) + pow(z,2)) * (1 - cos(theta)));
+  double attitude = asin(x * y * (1 - cos(theta)) + z * sin(theta));
+  double bank = atan2(x * sin(theta)-y * z * (1 - cos(theta)) , 1 - (pow(x,2) + pow(z,2)) * (1 - cos(theta)));
+  
+  std::vector<double> angles = {heading, attitude, bank};
+  
+  return angles;
 }
 
 // Returns true with probability p.

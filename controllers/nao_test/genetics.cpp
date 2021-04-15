@@ -65,23 +65,25 @@ Expression::Expression() {
 
 ///////////////// Gene /////////////////////////////////
 
-// Construct a genome with 3 expression objects in m_expressions.
-Gene::Gene() {
-  // Push back NUM_INPUT_VARS subexpressions - one per input variable.
-  for (int i = 0; i < NUM_INPUT_VARS; i++) { 
+// Construct a genome with i (m_numInputVars) expression objects in m_expressions.
+Gene::Gene(const int& i) : m_numInputVars(i) {
+  // Push back m_numInputVars subexpressions - one per input variable.
+  for (int i = 0; i < m_numInputVars; i++) { 
     Expression temp;         // Default constructor creates a random expression.
     m_expressions.push_back(temp);
   }
 }
 
 // Takes the current values of the input variables, and returns the output per m_expressions.
-// Takes a vector of doubles of size NUM_INPUT_VARS.
+// Takes a vector of doubles of size m_numInputVars.
 double Gene::calculateValue(const std::vector<double>& x) const {
+  // TODO: Check for case where x.size() != m_numInputVars.
+
   // The value to be returned.
   double result = 0;
   
   // Iterate through the input variables as per the subexpressions.
-  for (int i = 0; i < NUM_INPUT_VARS; i++) {
+  for (int i = 0; i < m_numInputVars; i++) {
     // For each input variable, apply the various nonlinear expressions.
     
     // poly
@@ -119,32 +121,86 @@ double Gene::calculateValue(const std::vector<double>& x) const {
     
     //std::cout << "exp: " << result << std::endl;
   }
+  return result;
+}
 
+///////////////// GaitGene /////////////////////////////////
+
+// Construct a Gene with i (m_numInputVars) expression objects in m_expressions.
+// This is a CPG / gait generator, so this does depends on input alpha, time t, and the index ind
+// We throw an error if input variables are not set to 3.  Note that we still check, 
+// as input variables can be set on Population level to m_numInputVars in Population constructor.
+GaitGene::GaitGene() {  
+  // Create some random devices to generate values.
+  std::random_device rd;
+  std::mt19937 mt(rd());
+  std::uniform_real_distribution<double> distD(GAITGENE_CONST_MIN, GAITGENE_CONST_MAX);
+  
+  // Fill the m_constants vector with some random values.
+  for (unsigned int j = 0; j < 5; ++j){
+    m_constants.push_back(distD(mt));
+  }
+}
+
+// Note that we accept an x vector to match the style of the Gene class, but the vector
+// should be of size 2 as per our comments on the GaitGene constructor.
+// ie, the input should be alpha and time t.
+std::vector<double> GaitGene::calculateValue(const std::vector<double>& x) const {
+  if (x.size() != 2) {
+    std::cout << "std::vector<double> GaitGene::calculateValue(const std::vector<double>& x): x must be of size 2.\n";
+  }
+
+  // Per equation 14 in https://github.com/Inexorably/naoTest/issues/12.
+  
+  const double alpha = x[0];  // Essentially input / gait magnitude modulation.
+  const double t = x[1];      // time t in seconds.
+  
+  double omega = 2*M_PI*alpha;
+  
+  // Find the relative angles.
+  double q1 = -m_constants[0]*alpha*cos(omega*t);
+  double q2 = m_constants[1]*cos(omega*t);
+  double q3 = m_constants[2]*cos(omega*t);
+  double q4 = m_constants[3]*alpha*cos(omega*t);
+  double q5 =  m_constants[4]*(1-cos(2*omega*t));
+  double q6 = -q1-q2-q3-q4-q5;
+
+  // Push the relative angles onto the return vector.
+  std::vector<double> result;
+  result.push_back(q1);
+  result.push_back(q2);
+  result.push_back(q3);
+  result.push_back(q4);
+  result.push_back(q5);
+  result.push_back(q6);
+  
   return result;
 }
 
 ///////////////// Organism /////////////////////////////////
 
-// Construct an organism with NUM_OUTPUT_VARS Gene members in m_genetics.
-Organism::Organism() {
-  for (int i = 0; i < NUM_OUTPUT_VARS; i++) { 
-    Gene temp;
+// Construct an organism with o (m_numOutputVars) Gene members in m_genetics.
+Organism::Organism(const int& i, const int& o) : m_numInputVars(i), m_numOutputVars(o) {
+  for (int i = 0; i < m_numOutputVars; i++) { 
+    Gene temp(m_numInputVars);
     m_genetics.push_back(temp);
   }
+  
+  m_chanceMutation = 1.0/static_cast<double>(m_numInputVars * m_numOutputVars);
   
   m_totalStableTime = 0;
   m_numSimulations = 0;
   m_totalZMPDistance = 0;
 }
 
-// Mutate the current organism.  Each expression has a MUTATION_CHANCE chance of changing.
+// Mutate the current organism.  Each expression has a chanceMutation chance of changing.
 void Organism::mutate() {
   //Loop through the m_genetics and m_expressions and randomly change the expressions.
-  // m_genetics is of size NUM_OUTPUT_VARS, and each Gene g.m_expressions is of size NUM_INPUT_VARS.
+  // m_genetics is of size m_numOutputVars, and each Gene g.m_expressions is of size m_numInputVars.
   for (Gene& g : m_genetics) {
     for (Expression& e : g.m_expressions) {
       // Randomly replace one of the expressions with a new one.
-      if (trueWithProbability(MUTATION_CHANCE)) {
+      if (trueWithProbability(m_chanceMutation)) {
         e = Expression();
       }
     }
@@ -158,12 +214,12 @@ Organism Organism::reproduce(const Organism& partner) const {
   // Create the child object to be returned.
   // TODO: Can optimize by adding constructor that skips rng coefficient creation since
   // immediately overwritten here, but performance gains are likely negligible.
-  Organism child;
+  Organism child(m_numInputVars, m_numOutputVars);
   
-  // Loop through the genetics (NUM_OUTPUT_VARS many) of the child object.
-  for (int i = 0; i < NUM_OUTPUT_VARS; i++) {
-    // Loop through the expressions (NUM_INPUT_VARS many) in each gene.
-    for (int j = 0; j < NUM_INPUT_VARS; j++) {
+  // Loop through the genetics (m_numOutputVars many) of the child object.
+  for (int i = 0; i < m_numOutputVars; i++) {
+    // Loop through the expressions (m_numInputVars many) in each gene.
+    for (int j = 0; j < m_numInputVars; j++) {
       // For each expression, set the child expression to one of the parent's.
       // If true with 50% chance, set to parent one (*this).
       if (trueWithProbability(0.5)) {
@@ -220,8 +276,10 @@ void Organism::save(const std::string& filename) const {
   outfile.open(filename);
 
   outfile << FILE_BLOCK_ORGANISM;
-  outfile << FILE_BLOCK_INDEX;
-  outfile << "\t\t" << std::to_string(0) << '\n';
+  outfile << FILE_BLOCK_NUM_INPUT_VARS;
+  outfile << "\t\t" << std::to_string(m_numInputVars) << '\n';
+  outfile << FILE_BLOCK_NUM_OUTPUT_VARS;
+  outfile << "\t\t" << std::to_string(m_numOutputVars) << '\n';
   outfile << FILE_BLOCK_TOTAL_STABLE_TIME;
   outfile << "\t\t" << std::to_string(m_totalStableTime) << '\n';
   outfile << FILE_BLOCK_NUM_SIMULATIONS;
@@ -229,16 +287,16 @@ void Organism::save(const std::string& filename) const {
   outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
   outfile << "\t\t" << std::to_string(m_totalZMPDistance) << '\n';
 
-  // Write each organisms m_genetics, of size NUM_OUTPUT_VARS.
+  // Write each organisms m_genetics, of size m_numOutputVars.
   outfile << FILE_BLOCK_GENETICS;
     
   // Loop through the genetics of each organism.
   for (Gene g : m_genetics) {
     // Write the expressions of each gene.
     outfile << FILE_BLOCK_EXPRESSIONS;
-    
+  
     // Loop through the expressions and write the variable values.
-    // m_expressions is of size NUM_INPUT_VARS.
+    // m_expressions is of size m_numInputVars.
     for (Expression e : g.m_expressions) {
       // Loop through and write m_poly coeffs
       outfile << FILE_BLOCK_POLY;
@@ -269,26 +327,122 @@ void Organism::save(const std::string& filename) const {
       for (double d : e.m_exp) {
         outfile << "\t\t\t\t" << std::to_string(d) << '\n';
       }
+    }   
+  }
+}
+
+///////////////// GaitOrganism /////////////////////////////////
+
+// Construct an organism with a single GaitGene member.
+GaitOrganism::GaitOrganism() {  
+  m_chanceMutation = 1.0/5.0;
+  
+  m_totalStableTime = 0;
+  m_numSimulations = 0;
+  m_totalZMPDistance = 0;
+  m_totalTranslationX = 0;
+}
+
+// Mutate the current organism.  Each expression has a chanceMutation chance of changing.
+void GaitOrganism::mutate() {
+  //Loop through the m_gaitGene and randomly change the values.
+  for (double& d : m_gaitGene.m_constants) {
+    if (trueWithProbability(m_chanceMutation)) {
+      // Create some random devices to generate values.
+      std::random_device rd;
+      std::mt19937 mt(rd());
+      std::uniform_real_distribution<double> distD(GAITGENE_CONST_MIN, GAITGENE_CONST_MAX);
+      d = distD(mt);
     }
   }
 }
 
-///////////////// Population /////////////////////////////////
+// Creates a child organism with the genetics of *this and partner GaitOrganism.
+GaitOrganism GaitOrganism::reproduce(const GaitOrganism& partner) const {
+  // Randomly mix the expressions of each partner.
+  
+  // Create the child object to be returned.
+  // TODO: Can optimize by adding constructor that skips rng coefficient creation since
+  // immediately overwritten here, but performance gains are likely negligible.
+  GaitOrganism child;
+  
+  // Loop through the genetics of the child object.
+  for (unsigned int i = 0; i < m_gaitGene.m_constants.size(); i++) {
+    // If true with 50% chance, set to parent one (*this).
+    if (trueWithProbability(0.5)) {
+      child.m_gaitGene.m_constants[i] = m_gaitGene.m_constants[i];
+    }
+    // else set to parent two (partner).
+    else {
+      child.m_gaitGene.m_constants[i] = partner.m_gaitGene.m_constants[i];
+    }
+  }
+  
+  // Return the child.
+  return child;
+}
 
-// Initialize a population with n random organisms.
-Population::Population(const int& n) {
-  m_generation = 0;
-  for (int i = 0; i < n; i++) {
-    m_organisms.push_back(Organism());
+// The fitness of the organism.
+double GaitOrganism::getFitness() const {
+  // Returns -1 if num_simulations == 0.
+  if (m_numSimulations == 0) { // More representative of concept than implictly casting as bool.
+    return -1;
+  }
+
+  return m_totalTranslationX/m_numSimulations;
+}
+
+// Defining comparison operators of organism for sorting / pruning purposes.
+// Compares by getFitness().
+bool GaitOrganism::operator < (const GaitOrganism& rhs) const {
+  return getFitness() < rhs.getFitness();
+}
+
+// Defining comparison operators of organism for sorting / pruning purposes.
+// Compares by getFitness().
+bool GaitOrganism::operator > (const GaitOrganism& rhs) const {
+  return getFitness() > rhs.getFitness();
+}
+
+// Save the current organism to a file.
+void GaitOrganism::save(const std::string& filename) const {
+  // Open a file stream.
+  std::ofstream outfile;
+  outfile.open(filename);
+
+  outfile << FILE_BLOCK_GAIT_ORGANISM;
+  outfile << FILE_BLOCK_TOTAL_STABLE_TIME;
+  outfile << "\t\t" << std::to_string(m_totalStableTime) << '\n';
+  outfile << FILE_BLOCK_NUM_SIMULATIONS;
+  outfile << "\t\t" << std::to_string(m_numSimulations) << '\n';
+  outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
+  outfile << "\t\t" << std::to_string(m_totalZMPDistance) << '\n';
+  outfile << FILE_BLOCK_TOTAL_TRANSLATION_X;
+  outfile << "\t\t" << std::to_string(m_totalTranslationX) << '\n';
+    
+  // Loop through the constants and write the values.
+  outfile << FILE_BLOCK_CONSTANTS;
+  for (double d : m_gaitGene.m_constants) {
+    outfile << "\t\t\t" << std::to_string(d) << '\n';
   }
 }
 
-// Create a population with POPULATION_SIZE random organisms.
-Population::Population() {
+
+///////////////// Population /////////////////////////////////
+
+// Initialize a population with n random organisms, i input vars, and o output vars.
+Population::Population(const int& n, const int& i, const int& o) : m_numInputVars(i), m_numOutputVars(o), m_numOrganisms(n) {
   m_generation = 0;
-  m_runtime = 0;
-  for (int i = 0; i < POPULATION_SIZE; i++) {
-    m_organisms.push_back(Organism());
+  m_chanceMutation = 1.0/static_cast<double>(m_numInputVars * m_numOutputVars);
+  
+  // The population size must be a multiple of 4, due to the mutation and repoduction functions working
+  // on the best half of the population each generation.
+  if (n%4 != 0) {
+    std::cout << "Population::Population(const int& n, const int& i, const int& o): n must be a multiple of 4.\n";
+  }
+  
+  for (int i = 0; i < n; i++) {
+    m_organisms.push_back(Organism(m_numInputVars, m_numOutputVars));
   }
 }
 
@@ -320,7 +474,7 @@ void Population::reproduceOrganisms() {
   sortOrganisms();
 }
 
-// Copy and mutate random members until m_organsisms.size() + number of mutated members == POPULATION_SIZE.
+// Copy and mutate random members until m_organsisms.size() + number of mutated members == m_numOrganisms.
 // Then, append the mutated members to m_organsisms.
 void Population::mutateOrganisms() {
   // Create a vector to store the mutated copies.
@@ -332,7 +486,7 @@ void Population::mutateOrganisms() {
   std::uniform_int_distribution<int> distI(0, m_organisms.size());
 
   // While we do not have enough organisms for the population size ...
-  while (m_organisms.size() + mutations.size() < POPULATION_SIZE) {
+  while (m_organisms.size() + mutations.size() < m_numOrganisms) {
     // Create a copy of a random organism in the population.
     Organism copy = m_organisms[distI(mt)];
     
@@ -366,9 +520,9 @@ void Population::save(const std::string& filename) const {
   outfile << FILE_BLOCK_POPULATION_SIZE;
   outfile <<"\t\t" << std::to_string(m_organisms.size()) << '\n';
   outfile << FILE_BLOCK_NUM_INPUT_VARS;
-  outfile << "\t\t" << std::to_string(NUM_INPUT_VARS) << '\n';
+  outfile << "\t\t" << std::to_string(m_numInputVars) << '\n';
   outfile << FILE_BLOCK_NUM_OUTPUT_VARS;
-  outfile << "\t\t" << std::to_string(NUM_OUTPUT_VARS) << '\n';
+  outfile << "\t\t" << std::to_string(m_numOutputVars) << '\n';
   
   // Output each organism to the file.
   for (unsigned int i = 0; i < m_organisms.size(); i++) {
@@ -382,7 +536,7 @@ void Population::save(const std::string& filename) const {
     outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
     outfile << "\t\t" << std::to_string(m_organisms[i].m_totalZMPDistance) << '\n';
 
-    // Write each organisms m_genetics, of size NUM_OUTPUT_VARS.
+    // Write each organisms m_genetics, of size m_numOutputVars.
     outfile << FILE_BLOCK_GENETICS;
     
     // Loop through the genetics of each organism.
@@ -391,7 +545,7 @@ void Population::save(const std::string& filename) const {
       outfile << FILE_BLOCK_EXPRESSIONS;
       
       // Loop through the expressions and write the variable values.
-      // m_expressions is of size NUM_INPUT_VARS.
+      // m_expressions is of size m_numInputVars.
       for (Expression e : g.m_expressions) {
         // Loop through and write m_poly coeffs
         outfile << FILE_BLOCK_POLY;
@@ -475,9 +629,9 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
   //Continue handling the header and skipping lines.
   std::getline(infile, line);        // <size>
   std::getline(infile, line);        // 1000
-  std::getline(infile, line);        // <NUM_INPUT_VARS>
+  std::getline(infile, line);        // <m_numInputVars>
   std::getline(infile, line);        // 6
-  std::getline(infile, line);        // <NUM_OUTPUT_VARS>
+  std::getline(infile, line);        // <m_numOutputVars>
   std::getline(infile, line);        // 10
   
   // organismTicker is the index of the current organism we are working on.  When we
@@ -730,5 +884,287 @@ void Population::load(const std::string& filename) {
 
 // Loads the population from the default filename DEFAULT_POPULATION_FILENAME.
 void Population::load() {
+  load(DEFAULT_POPULATION_FILENAME);
+}
+
+///////////////// GaitPopulation /////////////////////////////////
+
+// Initialize a GaitPopulation with n random organisms.
+GaitPopulation::GaitPopulation(const int& n) : m_numInputVars(2), m_numOutputVars(6), m_numOrganisms(n) {
+  m_generation = 0;
+  m_chanceMutation = 1.0/static_cast<double>(m_numInputVars * m_numOutputVars);
+  
+  // The population size must be a multiple of 4, due to the mutation and repoduction functions working
+  // on the best half of the population each generation.
+  if (n%4 != 0) {
+    std::cout << "Population::Population(const int& n, const int& i, const int& o): n must be a multiple of 4.\n";
+  }
+  
+  for (int i = 0; i < n; i++) {
+    m_organisms.push_back(GaitOrganism());
+  }
+}
+
+// Sort the m_organisms vector in descending order.
+void GaitPopulation::sortOrganisms() {
+  std::sort(m_organisms.begin(), m_organisms.end(), std::greater <>());
+}
+
+// Breed the current population with 2 partners creating 1 child organism.
+void GaitPopulation::reproduceOrganisms() {
+  // Shuffle the population so that we can easily select random partners.
+  std::random_device rd;
+  std::mt19937 g(rd());
+  std::shuffle(m_organisms.begin(), m_organisms.end(), g);
+
+  // Create a vector to store the children.
+  std::vector<GaitOrganism> children;
+
+  // Loop through the shuffled organisms and breed them.
+  for (size_t i = 0; i < m_organisms.size(); i += 2) {
+    children.push_back(m_organisms[i].reproduce(m_organisms[i+1]));
+  }
+  
+  // Append the children organism vector to the current population.
+  m_organisms.insert(std::end(m_organisms), std::begin(children), std::end(children));
+  
+  // Sort the m_organisms vector.  While not useful now, can be beneficial in future
+  // depending on design choice and is of negligible cpu cost.
+  sortOrganisms();
+}
+
+// Copy and mutate random members until m_organsisms.size() + number of mutated members == m_numOrganisms.
+// Then, append the mutated members to m_organsisms.
+void GaitPopulation::mutateOrganisms() {
+  // Create a vector to store the mutated copies.
+  std::vector<GaitOrganism> mutations;
+  
+  // Create an int rng device to select random members of m_organisms with.
+  std::random_device rd;
+  std::mt19937 mt(rd());
+  std::uniform_int_distribution<int> distI(0, m_organisms.size());
+
+  // While we do not have enough organisms for the population size ...
+  while (m_organisms.size() + mutations.size() < m_numOrganisms) {
+    // Create a copy of a random organism in the population.
+    GaitOrganism copy = m_organisms[distI(mt)];
+    
+    // Mutate the copy organism.
+    copy.mutate();
+    
+    // Push back the mutated copy.
+    mutations.push_back(copy);
+  }
+  
+  // Append the mutations vector to m_organisms.
+  m_organisms.insert(std::end(m_organisms), std::begin(mutations), std::end(mutations));
+  
+  // Sort the m_organisms vector.  While not useful now, can be beneficial in future
+  // depending on design choice and is of negligible cpu cost.
+  sortOrganisms();
+}
+
+// Saves the population to a given filename.
+void GaitPopulation::save(const std::string& filename) const {
+  // Open a file stream.
+  std::ofstream outfile;
+  outfile.open(filename);
+  
+  // Begin by writing population header information.
+  outfile << FILE_BLOCK_POPULATION;
+  outfile << FILE_BLOCK_RUNTIME;
+  outfile <<"\t\t" << std::to_string(m_runtime) << '\n';
+  outfile << FILE_BLOCK_GENERATION;
+  outfile <<"\t\t" << std::to_string(m_generation) << '\n';
+  outfile << FILE_BLOCK_POPULATION_SIZE;
+  outfile <<"\t\t" << std::to_string(m_organisms.size()) << '\n';
+  outfile << FILE_BLOCK_NUM_INPUT_VARS;
+  outfile << "\t\t" << std::to_string(m_numInputVars) << '\n';
+  outfile << FILE_BLOCK_NUM_OUTPUT_VARS;
+  outfile << "\t\t" << std::to_string(m_numOutputVars) << '\n';
+  
+  // Output each organism to the file.
+  for (unsigned int i = 0; i < m_organisms.size(); i++) {
+    outfile << FILE_BLOCK_ORGANISM;
+    outfile << FILE_BLOCK_INDEX;
+    outfile << "\t\t" << std::to_string(i) << '\n';
+    outfile << FILE_BLOCK_TOTAL_STABLE_TIME;
+    outfile << "\t\t" << std::to_string(m_organisms[i].m_totalStableTime) << '\n';
+    outfile << FILE_BLOCK_NUM_SIMULATIONS;
+    outfile << "\t\t" << std::to_string(m_organisms[i].m_numSimulations) << '\n';
+    outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
+    outfile << "\t\t" << std::to_string(m_organisms[i].m_totalZMPDistance) << '\n';
+    outfile << FILE_BLOCK_TOTAL_TRANSLATION_X;
+    outfile << "\t\t" << std::to_string(m_organisms[i].m_totalTranslationX) << '\n';
+      
+    // Loop through the constants and write the values.
+    outfile << FILE_BLOCK_CONSTANTS;
+    for (double d : m_organisms[i].m_gaitGene.m_constants) {
+      outfile << "\t\t\t" << std::to_string(d) << '\n';
+    } 
+  }
+  
+  // Close the ofstream.
+  outfile.close();
+}
+
+// Saves the population to the default filename DEFAULT_POPULATION_FILENAME.
+void GaitPopulation::save() const {
+  save(DEFAULT_POPULATION_FILENAME);
+}
+
+// Loads the population from a given file.  If ignoreHistory is true, do not load the
+// m_totalStableTime and m_numSimulation members from the file.
+void GaitPopulation::load(const std::string& filename, const bool& ignoreHistory) {
+  // Create the ifstream.
+  std::ifstream infile(filename);
+  
+  // Mostly skip the fixed header information.
+  std::string line;                  // Some possible values:
+  std::getline(infile, line);        // <population>
+
+  //If the first line is empty, return.  
+  if (line.empty()) {
+    return;
+  }
+
+  // More initial header info:  
+  std::getline(infile, line);        // <runtime>
+  std::getline(infile, line);        // 632635481.079
+  
+  // Clean and set the m_generation value if we are not ignoring history.
+  line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+  line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+  if (!ignoreHistory) {
+    m_runtime = std::stod(line);
+  }
+  
+  // Skip more header information.
+  std::getline(infile, line);        // <generation>
+  std::getline(infile, line);        // 3
+  
+  // Clean and set the m_generation value if we are not ignoring history.
+  line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+  line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+  if (!ignoreHistory) {
+    m_generation = std::stod(line) + 1.0;   //We create the object as the next generation, to correctly resume progress.
+  }
+  
+  //Continue handling the header and skipping lines.
+  std::getline(infile, line);        // <m_numOrganisms>
+  std::getline(infile, line);        // 1000
+  std::getline(infile, line);        // <m_numInputVars>
+  std::getline(infile, line);        // 6
+  std::getline(infile, line);        // <m_numOutputVars>
+  std::getline(infile, line);        // 10
+  
+  // organismTicker is the index of the current organism we are working on.  When we
+  // encounter a <organism> line, we increment this ticker.  Thus, we start at -1 as
+  // we will encounter such a line immediately for the organism at 0 index.
+  int organismTicker = -1;
+  
+  // Iterate through each organism and add.
+  for (; std::getline(infile, line); ) {
+    // If we are encountering a new organism object, increment the index of the organism
+    // in *this.m_organisms that we are working on.  We also reset geneTicker and expressionTicker.
+    if (line == FILE_BLOCK_ORGANISM_STRIPPED) {
+      organismTicker++;
+      // std::cout << line << ": incrementing organismTicker: " << organismTicker << std::endl;
+      continue;
+    }
+    
+    // The index is for people manually reading the file and referencing organisms, so we don't care about it.
+    // Index is already equal to organismTicker.
+    if (line == FILE_BLOCK_INDEX_STRIPPED) {
+      //std::cout << line << ": skipping next line" << std::endl;
+      // We aren't interested in the index, so get it and then continue so that we skip the value.
+      std::getline(infile, line);
+      //std::cout << line << ": did not record this" << std::endl;
+      continue;
+    }
+    
+     // Get and set m_totalStableTime.
+     if (line == FILE_BLOCK_TOTAL_STABLE_TIME_STRIPPED) {
+       // Get the value contained in the next line, strip the \t and \n chars,
+       // and set the m_totalStableTime value.
+       std::getline(infile, line);
+       line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+       line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+       
+       // If ignoreHistory is true, we don't load the totalStableTime value.
+       if (!ignoreHistory) {
+         m_organisms[organismTicker].m_totalStableTime = std::stod(line);
+       }
+       //std::cout << line << ": recording total stable time" << std::endl;
+       continue;
+     }
+     
+     // Get and set m_numSimulations.
+     if (line == FILE_BLOCK_NUM_SIMULATIONS_STRIPPED) {
+       // Get the value contained in the next line, strip the \t and \n chars,
+       // and set the m_totalStableTime value.
+       std::getline(infile, line);
+       line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+       line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+       // If ignoreHistory is true, we don't load the m_numSimulations value.
+       if (!ignoreHistory) {
+         m_organisms[organismTicker].m_numSimulations = std::stod(line);
+       }
+       //std::cout << line << ": recording num simulations" << std::endl;
+       continue;
+     }
+     
+     // Get and set m_totalZMPDistance.
+     if (line == FILE_BLOCK_TOTAL_ZMP_DISTANCE_STRIPPED) {
+       // Get the value contained in the next line, strip the \t and \n chars,
+       // and set the m_totalZMPDistance value.
+       std::getline(infile, line);
+       line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+       line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+       // If ignoreHistory is true, we don't load the m_totalZMPDistance value.
+       if (!ignoreHistory) {
+         m_organisms[organismTicker].m_totalZMPDistance = std::stod(line);
+       }
+       //std::cout << line << ": recording total zmp distance" << std::endl;
+       continue;
+     }
+     
+     // Get and set m_totalTranslationX.
+     if (line == FILE_BLOCK_TOTAL_TRANSLATION_X_STRIPPED) {
+       // Get the value contained in the next line, strip the \t and \n chars,
+       // and set the m_totalTranslationX value.
+       std::getline(infile, line);
+       line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+       line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+       // If ignoreHistory is true, we don't load the m_totalTranslationX value.
+       if (!ignoreHistory) {
+         m_organisms[organismTicker].m_totalTranslationX = std::stod(line);
+       }
+       //std::cout << line << ": recording total translation x" << std::endl;
+       continue;
+     }
+     
+     // If detect m_constants block we read the 5 constants.
+     if (line == FILE_BLOCK_CONSTANTS_STRIPPED) {
+       for (int i = 0; i < 5; i++) {
+         // Get the constant value.
+         std::getline(infile, line);
+         line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+         line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+         m_organisms[organismTicker].m_gaitGene.m_constants[i] = std::stod(line);
+       }
+       continue;
+     }
+  }
+}
+
+// Loads the population from a given file.
+// TODO: Load validation such as confirming right population size etc.
+void GaitPopulation::load(const std::string& filename) {
+  load(filename, false);
+}
+
+// Loads the population from the default filename DEFAULT_POPULATION_FILENAME.
+void GaitPopulation::load() {
   load(DEFAULT_POPULATION_FILENAME);
 }
