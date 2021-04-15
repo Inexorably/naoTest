@@ -245,7 +245,7 @@ double Organism::getFitness() const {
   }
   
   // We base the fitness score on the following components.
-  double timeComponent = m_totalStableTime/static_cast<double>(m_numSimulations);
+  double timeComponent = FITNESS_WEIGHT_TIME_COEF*m_totalStableTime/static_cast<double>(m_numSimulations);
   double zmpComponent = -1*FITNESS_WEIGHT_ZMP_COEF*m_totalZMPDistance/static_cast<double>(m_numSimulations);  // Higher zmp distances are punished, so we mult by -1.
   
   // If we exceed the transition time, greatly increase the zmp component weighting to

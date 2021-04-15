@@ -649,7 +649,12 @@ int test(int argc, char **argv) {
      forwardsTest.play();
     
       // Simulate robot.  If robot is still stable at the end of the motion file, break.
-      while (robot->step(timeStep) != -1 && robot->getTime() < 6.76) {
+      while (robot->step(timeStep) != -1 && robot->getTime() < forwardsTest.getDuration()/1000+1) {
+        if (forwardsTest.isOver()) {
+          //std::cout << "Motion playback finished at " << robot->getTime() << " s.\n";
+          break;
+        }
+      
         // Don't attempt to control every step.  Waiting more steps can reduce noise.
         static int ticker = 0;
         ticker++;
@@ -674,6 +679,11 @@ int test(int argc, char **argv) {
           
           // Put the control inputs into a vector to pass to the control function.
           std::vector<double> x = {zmplx, zmply, zmprx, zmpry};
+          
+          // Loop through the control / input motors and put their target positions into the x vector.
+          for (auto m : inputMotors) {
+            x.push_back(m->getTargetPosition());
+          }
             
           // Generate each output variable based on the input (ie, loop through the system of equations).
           for (int j = 0; j < p.m_numOutputVars; j++) {
