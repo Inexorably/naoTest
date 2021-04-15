@@ -329,7 +329,7 @@ int runGaitEvolutions(int argc, char **argv) {
   Motor *LAnkleRoll = robot->getMotor("LAnkleRoll");
   
   // For iterating through:
-  Motor *controlMotors[10] = {RShoulderPitch, RShoulderRoll, RElbowYaw, RElbowRoll, LShoulderPitch, LShoulderRoll, LElbowYaw, LElbowRoll, LHipRoll, LAnkleRoll};
+  std::vector<Motor*> controlMotors = {RAnklePitch, RKneePitch, RHipPitch, LHipPitch, LKneePitch, LAnklePitch};
 
   //Misc sensors
   Camera *cameraTop = robot->getCamera("CameraTop");
@@ -388,13 +388,36 @@ int runGaitEvolutions(int argc, char **argv) {
       
       // Get the start time of each organism's simulation.
       double t0 = robot->getTime();
+      
+      // The last time we swapped the gait cycle.
+      double tg = 0;
+      
+      // False means that right leg is support, true means left leg is support.
+      bool swingPhase = false;
     
       // Simulate robot.  If robot stays stable for more than SIMULATION_TIME_MAX seconds, break.
-      while (robot->step(timeStep) != -1 && robot->getTime() < SIMULATION_TIME_MAX) {
+      while (robot->step(timeStep) != -1 && robot->getTime() < SIMULATION_TIME_MAX) {/*
         // Hold the robot in the air while we test.
         const double pos[3] = {0.0, 0.6, 0.0};
         trans_field->setSFVec3f(pos);
-      
+        
+        // Reset the velocities.
+        const double vel[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        robot_node->setVelocity(vel);
+        */
+        
+        if (robot->getTime() < 0.6) {
+          // Lower the arms while testing.
+          RShoulderPitch->setPosition(1.5708);
+          LShoulderPitch->setPosition(1.5708);
+          continue;
+        }
+        
+        /*
+        const double rot[4] = {1.0, 0.0, 0.0, -1.5708};
+        rot_field->setSFRotation(rot);
+        */
+        
         // Don't attempt to control every step.  Waiting more steps can reduce noise.
         static int ticker = 0;
         ticker++;
@@ -404,6 +427,12 @@ int runGaitEvolutions(int argc, char **argv) {
           auto zmps = getZMPCoordinates(fsrL, fsrR);
           double zmplx = zmps[0].m_x;
           double zmply = zmps[0].m_y;
+          if (zmps[1].m_isSupporting) {
+            zmplx = zmps[1].m_x;
+            zmply = zmps[1].m_y;
+            // TODO: This will cause a discontinuity on the step that we switch supporting feet
+            // in the derivatives.  Handle this.
+          }
           
           // Add to the organism's m_totalZMPDistance member so that we can reward
           // keeping the zmp x y closer to zero state.
@@ -417,13 +446,39 @@ int runGaitEvolutions(int argc, char **argv) {
           zmplyd2t = (zmplydt - zmplydt_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
           
           // Put the control inputs into a vector to pass to the control function.
-          double alpha = 1;
-          std::vector<double> x = {alpha, robot->getTime()};
+          double alpha = 1.0;
+          // Check if we need to swap the support / swing legs.
+          double tChopped = robot->getTime() - tg;
+          if (tChopped > 1/alpha) {
+            swingPhase = !swingPhase;
+          }
+          
+          std::vector<double> x = {alpha, tChopped};
           
           // Generate the output vector of the relative angles q.
           std::vector<double> q = o.m_gaitGene.calculateValue(x);
+          
+          std::vector<double> test = q;   // We will overwrite values, but make the same size.  Is cheap.
+          
+          // We re-order the motors based on swingPhase.
+          // If the right leg is the support leg.
+          if (swingPhase) { 
+            controlMotors = {RAnklePitch, RKneePitch, RHipPitch, LHipPitch, LKneePitch, LAnklePitch};
+          }
+          else {
+            controlMotors = {LAnklePitch, LKneePitch, LHipPitch, RHipPitch, RKneePitch, RAnklePitch};
+          }
+          
+          test[3] = -1*q[3]/2.0;          // q4 is split between the hip joints, so we half.
+          test[2] = q[3]/2.0 + q[2];      // add q3 to the supporting hip joint.
+          test[1] = 0;                    // We set the knee joint of the support leg to 0.
             
           // Loop through the control motors and do the inputs.
+          for (int i = 0; i < 5; ++i) {
+            double input = test[i];
+            input = clamp(input, controlMotors[i]->getMinPosition(), controlMotors[i]->getMaxPosition());
+            controlMotors[i]->setPosition(input);
+          }
           
           // Set the current zmp values as the previous values so we can calculate derivatives in the next step.
           zmplx_prev = zmplx;
@@ -435,13 +490,17 @@ int runGaitEvolutions(int argc, char **argv) {
         }
       
         // If the robot falls, break.
-        if (!isStable(fsrL, fsrR) && false) {
+        if (!isStable(fsrL, fsrR)) {
           break;
         }
       }
       
       // Get the time the robot was stable.
       double stableTime = robot->getTime() - t0;
+      
+      // Get the total distance in x travelled.
+      const double* trans = trans_field->getSFVec3f();
+      o.m_totalTranslationX += trans[0];
       
       // Increment the runs counter and stable time tracker variables.
       o.m_totalStableTime += stableTime;

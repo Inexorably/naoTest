@@ -340,6 +340,7 @@ GaitOrganism::GaitOrganism() {
   m_totalStableTime = 0;
   m_numSimulations = 0;
   m_totalZMPDistance = 0;
+  m_totalTranslationX = 0;
 }
 
 // Mutate the current organism.  Each expression has a chanceMutation chance of changing.
@@ -381,25 +382,14 @@ GaitOrganism GaitOrganism::reproduce(const GaitOrganism& partner) const {
   return child;
 }
 
-// The fitness of the organism, determined by average time before falling in simulation and
-// the average distance of zmp coordinates from the origin.
+// The fitness of the organism.
 double GaitOrganism::getFitness() const {
   // Returns -1 if num_simulations == 0.
   if (m_numSimulations == 0) { // More representative of concept than implictly casting as bool.
     return -1;
   }
-  
-  // We base the fitness score on the following components.
-  double timeComponent = m_totalStableTime/static_cast<double>(m_numSimulations);
-  double zmpComponent = (m_totalStableTime*sqrt(pow(FOOT_WIDTH, 2)+pow(FOOT_LENGTH, 2))-m_totalZMPDistance)/static_cast<double>(m_numSimulations);
-  
-  // If we exceed the transition time, greatly increase the zmp component weighting to
-  // encourage the robot to minimize zmp.
-  if (timeComponent > FITNESS_WEIGHT_ZMP_TRANSITION_TIME) {
-    zmpComponent = zmpComponent * FITNESS_WEIGHT_ZMP_TRANSITION_COEF;
-  }
-  
-  return (timeComponent + zmpComponent);
+
+  return m_totalTranslationX/m_numSimulations;
 }
 
 // Defining comparison operators of organism for sorting / pruning purposes.
@@ -427,6 +417,8 @@ void GaitOrganism::save(const std::string& filename) const {
   outfile << "\t\t" << std::to_string(m_numSimulations) << '\n';
   outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
   outfile << "\t\t" << std::to_string(m_totalZMPDistance) << '\n';
+  outfile << FILE_BLOCK_TOTAL_TRANSLATION_X;
+  outfile << "\t\t" << std::to_string(m_totalTranslationX) << '\n';
     
   // Loop through the constants and write the values.
   outfile << FILE_BLOCK_CONSTANTS;
@@ -1002,6 +994,8 @@ void GaitPopulation::save(const std::string& filename) const {
     outfile << "\t\t" << std::to_string(m_organisms[i].m_numSimulations) << '\n';
     outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
     outfile << "\t\t" << std::to_string(m_organisms[i].m_totalZMPDistance) << '\n';
+    outfile << FILE_BLOCK_TOTAL_TRANSLATION_X;
+    outfile << "\t\t" << std::to_string(m_organisms[i].m_totalTranslationX) << '\n';
       
     // Loop through the constants and write the values.
     outfile << FILE_BLOCK_CONSTANTS;
@@ -1123,7 +1117,7 @@ void GaitPopulation::load(const std::string& filename, const bool& ignoreHistory
      // Get and set m_totalZMPDistance.
      if (line == FILE_BLOCK_TOTAL_ZMP_DISTANCE_STRIPPED) {
        // Get the value contained in the next line, strip the \t and \n chars,
-       // and set the m_totalStableTime value.
+       // and set the m_totalZMPDistance value.
        std::getline(infile, line);
        line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
        line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
@@ -1132,6 +1126,21 @@ void GaitPopulation::load(const std::string& filename, const bool& ignoreHistory
          m_organisms[organismTicker].m_totalZMPDistance = std::stod(line);
        }
        //std::cout << line << ": recording total zmp distance" << std::endl;
+       continue;
+     }
+     
+     // Get and set m_totalTranslationX.
+     if (line == FILE_BLOCK_TOTAL_TRANSLATION_X_STRIPPED) {
+       // Get the value contained in the next line, strip the \t and \n chars,
+       // and set the m_totalTranslationX value.
+       std::getline(infile, line);
+       line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+       line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+       // If ignoreHistory is true, we don't load the m_totalTranslationX value.
+       if (!ignoreHistory) {
+         m_organisms[organismTicker].m_totalTranslationX = std::stod(line);
+       }
+       //std::cout << line << ": recording total translation x" << std::endl;
        continue;
      }
      

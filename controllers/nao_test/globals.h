@@ -42,8 +42,8 @@ const int EXPRESSION_CONST_EXP_MAX = 5;
 const int EXPRESSION_CONST_EXP_MIN = 0;
 
 // GaitGene constant min and max values.
-const double GAITGENE_CONST_MIN = -10;
-const double GAITGENE_CONST_MAX = 10;
+const double GAITGENE_CONST_MIN = -2.5;
+const double GAITGENE_CONST_MAX = 2.5;
 
 // FITNESS_WEIGHT_ZMP_TRANSITION_TIME: average stable time at which we transition
 // to highly valuing zmp stability.  To have any affect, must be less than SIMULATION_TIME_MAX.
@@ -70,6 +70,7 @@ const std::string FILE_BLOCK_INDEX = "\t<index>\n";
 const std::string FILE_BLOCK_TOTAL_STABLE_TIME = "\t<m_totalStableTime>\n";
 const std::string FILE_BLOCK_NUM_SIMULATIONS = "\t<m_numSimulations>\n";
 const std::string FILE_BLOCK_TOTAL_ZMP_DISTANCE = "\t<m_totalZMPDistance>\n";
+const std::string FILE_BLOCK_TOTAL_TRANSLATION_X = "\t<m_totalTranslationX>\n";
 const std::string FILE_BLOCK_GENETICS = "\t<m_genetics>\n";
 const std::string FILE_BLOCK_EXPRESSIONS = "\t\t<m_expressions>\n";
 const std::string FILE_BLOCK_CONSTANTS = "\t\t<m_constants>\n";
@@ -91,6 +92,7 @@ const std::string FILE_BLOCK_INDEX_STRIPPED = "\t<index>";
 const std::string FILE_BLOCK_TOTAL_STABLE_TIME_STRIPPED = "\t<m_totalStableTime>";
 const std::string FILE_BLOCK_NUM_SIMULATIONS_STRIPPED = "\t<m_numSimulations>";
 const std::string FILE_BLOCK_TOTAL_ZMP_DISTANCE_STRIPPED = "\t<m_totalZMPDistance>";
+const std::string FILE_BLOCK_TOTAL_TRANSLATION_X_STRIPPED = "\t<m_totalTranslationX>";
 const std::string FILE_BLOCK_GENETICS_STRIPPED = "\t<m_genetics>";
 const std::string FILE_BLOCK_EXPRESSIONS_STRIPPED = "\t\t<m_expressions>";
 const std::string FILE_BLOCK_CONSTANTS_STRIPPED = "\t\t<m_constants>";
