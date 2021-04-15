@@ -158,52 +158,6 @@ int runEvolutions(int argc, char **argv) {
         // Move right leg randomly.
         moveRightLeg(robot->getTime(), RHipYawPitch, RHipRoll, RHipPitch, RKneePitch, RAnklePitch, RAnkleRoll);
         LAnklePitch->setPosition(0.2*sin(1.2*robot->getTime()));
-        
-        // Don't attempt to control every step.  Waiting more steps can reduce noise.
-        static int ticker = 0;
-        ticker++;
-        if (ticker > STEPS_PER_CONTROL) {
-          // Get the inputs (zmpx, zmpy, respective motor target position).
-          // We are moving the right foot, so we are interested in the zmps of the left foot.
-          // The left foot zmps is the first element returned by getZMPCoordinates.
-          auto zmps = getZMPCoordinates(fsrL, fsrR);
-          double zmplx = zmps[0].m_x;
-          double zmply = zmps[0].m_y;
-          
-          // Add to the organism's m_totalZMPDistance member so that we can reward
-          // keeping the zmp x y closer to zero state.
-          // We weight by how much time has been spent at this zmp coordinate.
-          o.m_totalZMPDistance += sqrt(pow(zmplx, 2)+pow(zmply, 2))/(STEPS_PER_CONTROL*timeStep);
-
-          // Check the derivatives of the zmps.
-          zmplxdt = (zmplx - zmplx_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
-          zmplydt = (zmply - zmply_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
-          zmplxd2t = (zmplxdt - zmplxdt_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
-          zmplyd2t = (zmplydt - zmplydt_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
-          
-          // Put the control inputs into a vector to pass to the control function.
-          std::vector<double> x = {zmplx, zmply, zmplxdt, zmplydt, zmplxd2t, zmplyd2t};
-            
-          // Generate each output variable based on the input (ie, loop through the system of equations).
-          for (int j = 0; j < p.m_numOutputVars; j++) {
-            // Find the respective motor input position and clamp it to the min:max bounds of that motor.
-            double input = o.m_genetics[j].calculateValue(x);
-            input = clamp(input, controlMotors[j]->getMinPosition(), controlMotors[j]->getMaxPosition());   
-            controlMotors[j]->setPosition(input);
-          }
-          // Set the current zmp values as the previous values so we can calculate derivatives in the next step.
-          zmplx_prev = zmplx;
-          zmply_prev = zmply;
-          zmplxdt_prev = zmplxdt;
-          zmplydt_prev = zmplydt;
-          
-          ticker = 0;
-        }
-      
-        // If the robot falls, break.
-        if (!isStable(fsrL, fsrR)) {
-          break;
-        }
       }
       
       // Get the time the robot was stable.
@@ -593,7 +547,7 @@ int test(int argc, char **argv) {
   // Get motors per NAO proto file.
   
   //Upper body.
-  Motor *headYaw = robot->getMotor("HeadYaw");
+  Motor *HeadYaw = robot->getMotor("HeadYaw");
   Motor *HeadPitch = robot->getMotor("HeadPitch");
   Motor *RShoulderPitch = robot->getMotor("RShoulderPitch");
   Motor *RShoulderRoll = robot->getMotor("RShoulderRoll");
@@ -621,7 +575,7 @@ int test(int argc, char **argv) {
   // Load motion files.
   Motion hand_wave("../../motions/HandWave.motion");
   Motion forwards("../../motions/Forwards50.motion");
-  Motion forwardsTest("../../motions/Forwards50_2x.motion");   // Modified walking motion with 2x speed and no hip / ankle roll
+  Motion forwardsTest("../../motions/Forwards50.motion");   // Modified walking motion with 2x speed and no hip / ankle roll
   Motion backwards("../../motions/Backwards.motion");
   Motion side_step_left("../../motions/SideStepLeft.motion");
   Motion side_step_right("../../motions/SideStepRight.motion");
@@ -629,7 +583,13 @@ int test(int argc, char **argv) {
   Motion turn_right_60("../../motions/TurnRight60.motion");
   
   // For iterating through:
-  std::vector<Motor*> controlMotors = {RAnklePitch, RKneePitch, RHipPitch, LHipPitch, LKneePitch, LAnklePitch};
+  // The motors we use as inputs for the controller (in addition to the zmp coords).
+  // We get these with getTargetPosition().
+  std::vector<Motor*> inputMotors = {LHipYawPitch,LHipRoll,LHipPitch,LKneePitch,LAnklePitch,LAnkleRoll,RHipYawPitch,RHipRoll,RHipPitch,RKneePitch,RAnklePitch,RAnkleRoll};
+  
+  // The motors we use as outputs that the controller provides target positions to.
+  // We use these with setPosition().
+  std::vector<Motor*> outputMotors = {HeadYaw, HeadPitch, RShoulderPitch, RShoulderRoll, RElbowYaw, RElbowRoll, LShoulderPitch, LShoulderRoll, LElbowYaw, LElbowRoll};
 
   //Misc sensors
   Camera *cameraTop = robot->getCamera("CameraTop");
@@ -644,25 +604,15 @@ int test(int argc, char **argv) {
   //////////////////////////////////////////////////////////////////////////
   
   // Generate an organism population of controllers.
-  GaitPopulation p(1000);
+  // We use 4 extra inputs in addition to the inputMotors vector: 
+  Population p(1000, inputMotors.size()+4, outputMotors.size());
   
   // Load p from the default file.  If no such file exists or file is corrupted,
   // the random p created upon construction will not be changed.
   p.load(DEFAULT_POPULATION_FILENAME, false);
   
   // For debugging purposes, output the best current fitness score.
-  double bestFitnessScore = -11111111;
-  
-  // Track the zmp derivatives every STEPS_PER_CONTROL steps to use as additional control inputs.
-  // Assume starting from rest.
-  int zmplx_prev = 0;
-  int zmply_prev = 0;
-  int zmplxdt = 0;
-  int zmplydt = 0;
-  int zmplxdt_prev = 0;
-  int zmplydt_prev = 0;
-  int zmplxd2t = 0;
-  int zmplyd2t = 0;
+  double bestFitnessScore = -1;
   
   // We may not start at the first generation.
   int initialGeneration = p.m_generation;
@@ -677,7 +627,7 @@ int test(int argc, char **argv) {
     // For each organism in the population, run the simulation in order to generate fitness values.
     unsigned int progressTickerA = 0;   // For printing to console / debugging.
     unsigned int progressTickerB = 0;
-    for (GaitOrganism& o : p.m_organisms) {
+    for (Organism& o : p.m_organisms) {
       // Print progress to console every 10% of the current population.
       progressTickerA++;
       if (progressTickerA > p.m_numOrganisms/10) {
@@ -698,92 +648,44 @@ int test(int argc, char **argv) {
       //
      forwardsTest.play();
     
-      // Simulate robot.  If robot stays stable for more than SIMULATION_TIME_MAX seconds, break.
-      while (robot->step(timeStep) != -1 && robot->getTime() < SIMULATION_TIME_MAX) {/*
-        // Hold the robot in the air while we test.
-        const double pos[3] = {0.0, 0.6, 0.0};
-        trans_field->setSFVec3f(pos);
-        
-        // Reset the velocities.
-        const double vel[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-        robot_node->setVelocity(vel);
-        */
-        
- 
-        continue;
-        
-        /*
-        const double rot[4] = {1.0, 0.0, 0.0, -1.5708};
-        rot_field->setSFRotation(rot);
-        */
-        
+      // Simulate robot.  If robot is still stable at the end of the motion file, break.
+      while (robot->step(timeStep) != -1 && robot->getTime() < 6.76) {
         // Don't attempt to control every step.  Waiting more steps can reduce noise.
         static int ticker = 0;
         ticker++;
         if (ticker > STEPS_PER_CONTROL) {
           // Get the inputs (zmpx, zmpy, respective motor target position).
-          // Record the dominant food zmps.
           auto zmps = getZMPCoordinates(fsrL, fsrR);
           double zmplx = zmps[0].m_x;
           double zmply = zmps[0].m_y;
-          if (zmps[1].m_isSupporting) {
-            zmplx = zmps[1].m_x;
-            zmply = zmps[1].m_y;
-            // TODO: This will cause a discontinuity on the step that we switch supporting feet
-            // in the derivatives.  Handle this.
-          }
+          double zmprx = zmps[1].m_x;
+          double zmpry = zmps[1].m_y;
           
           // Add to the organism's m_totalZMPDistance member so that we can reward
           // keeping the zmp x y closer to zero state.
           // We weight by how much time has been spent at this zmp coordinate.
-          o.m_totalZMPDistance += sqrt(pow(zmplx, 2)+pow(zmply, 2))/(STEPS_PER_CONTROL*timeStep);
-
-          // Check the derivatives of the zmps.
-          zmplxdt = (zmplx - zmplx_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
-          zmplydt = (zmply - zmply_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
-          zmplxd2t = (zmplxdt - zmplxdt_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
-          zmplyd2t = (zmplydt - zmplydt_prev) / static_cast<double>(timeStep * STEPS_PER_CONTROL);
-          
-          // Put the control inputs into a vector to pass to the control function.
-          double alpha = 1.0;
-          // Check if we need to swap the support / swing legs.
-          double tChopped = robot->getTime() - tg;
-          if (tChopped > 1/alpha) {
-            swingPhase = !swingPhase;
-          }
-          
-          std::vector<double> x = {alpha, tChopped};
-          
-          // Generate the output vector of the relative angles q.
-          std::vector<double> q = o.m_gaitGene.calculateValue(x);
-          
-          std::vector<double> test = q;   // We will overwrite values, but make the same size.  Is cheap.
-          
-          // We re-order the motors based on swingPhase.
-          // If the right leg is the support leg.
-          if (swingPhase) { 
-            controlMotors = {RAnklePitch, RKneePitch, RHipPitch, LHipPitch, LKneePitch, LAnklePitch};
+          // Add the dominant foot zmps.
+          if (zmps[0].m_isSupporting) {
+            o.m_totalZMPDistance += sqrt(pow(zmplx, 2)+pow(zmply, 2))/(STEPS_PER_CONTROL*timeStep);          
           }
           else {
-            controlMotors = {LAnklePitch, LKneePitch, LHipPitch, RHipPitch, RKneePitch, RAnklePitch};
+            o.m_totalZMPDistance += sqrt(pow(zmprx, 2)+pow(zmpry, 2))/(STEPS_PER_CONTROL*timeStep);          
           }
           
-          test[3] = -1*q[3]/2.0;          // q4 is split between the hip joints, so we half.
-          test[2] = q[3]/2.0 + q[2];      // add q3 to the supporting hip joint.
-          test[1] = 0;                    // We set the knee joint of the support leg to 0.
+          // Put the control inputs into a vector to pass to the control function.
+          std::vector<double> x = {zmplx, zmply, zmprx, zmpry};
             
-          // Loop through the control motors and do the inputs.
-          for (int i = 0; i < 5; ++i) {
-            double input = test[i];
-            input = clamp(input, controlMotors[i]->getMinPosition(), controlMotors[i]->getMaxPosition());
-            controlMotors[i]->setPosition(input);
+          // Generate each output variable based on the input (ie, loop through the system of equations).
+          for (int j = 0; j < p.m_numOutputVars; j++) {
+            // Find the respective motor input position and clamp it to the min:max bounds of that motor.
+            double input = o.m_genetics[j].calculateValue(x);
+            
+            // Handle NaN results.  If is NaN, set to zero.  Else, don't modify.            
+            input = std::isnan(input) ? 0 : input;
+            
+            input = clamp(input, outputMotors[j]->getMinPosition(), outputMotors[j]->getMaxPosition());   
+            outputMotors[j]->setPosition(input);
           }
-          
-          // Set the current zmp values as the previous values so we can calculate derivatives in the next step.
-          zmplx_prev = zmplx;
-          zmply_prev = zmply;
-          zmplxdt_prev = zmplxdt;
-          zmplydt_prev = zmplydt;
           
           ticker = 0;
         }

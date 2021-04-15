@@ -246,7 +246,7 @@ double Organism::getFitness() const {
   
   // We base the fitness score on the following components.
   double timeComponent = m_totalStableTime/static_cast<double>(m_numSimulations);
-  double zmpComponent = (m_totalStableTime*sqrt(pow(FOOT_WIDTH, 2)+pow(FOOT_LENGTH, 2))-m_totalZMPDistance)/static_cast<double>(m_numSimulations);
+  double zmpComponent = -1*FITNESS_WEIGHT_ZMP_COEF*m_totalZMPDistance/static_cast<double>(m_numSimulations);  // Higher zmp distances are punished, so we mult by -1.
   
   // If we exceed the transition time, greatly increase the zmp component weighting to
   // encourage the robot to minimize zmp.
@@ -254,7 +254,9 @@ double Organism::getFitness() const {
     zmpComponent = zmpComponent * FITNESS_WEIGHT_ZMP_TRANSITION_COEF;
   }
   
-  return (timeComponent + zmpComponent);
+  double translationXComponent = FITNESS_WEIGHT_TRANSLATION_X_COEF*m_totalTranslationX/static_cast<double>(m_numSimulations);
+  
+  return (timeComponent + zmpComponent + translationXComponent);
 }
 
 // Defining comparison operators of organism for sorting / pruning purposes.
@@ -286,6 +288,8 @@ void Organism::save(const std::string& filename) const {
   outfile << "\t\t" << std::to_string(m_numSimulations) << '\n';
   outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
   outfile << "\t\t" << std::to_string(m_totalZMPDistance) << '\n';
+  outfile << FILE_BLOCK_TOTAL_TRANSLATION_X;
+  outfile << "\t\t" << std::to_string(m_totalTranslationX) << '\n';
 
   // Write each organisms m_genetics, of size m_numOutputVars.
   outfile << FILE_BLOCK_GENETICS;
@@ -535,6 +539,8 @@ void Population::save(const std::string& filename) const {
     outfile << "\t\t" << std::to_string(m_organisms[i].m_numSimulations) << '\n';
     outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
     outfile << "\t\t" << std::to_string(m_organisms[i].m_totalZMPDistance) << '\n';
+    outfile << FILE_BLOCK_TOTAL_TRANSLATION_X;
+    outfile << "\t\t" << std::to_string(m_organisms[i].m_totalTranslationX) << '\n';
 
     // Write each organisms m_genetics, of size m_numOutputVars.
     outfile << FILE_BLOCK_GENETICS;
@@ -714,6 +720,21 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
          m_organisms[organismTicker].m_totalZMPDistance = std::stod(line);
        }
        //std::cout << line << ": recording total zmp distance" << std::endl;
+       continue;
+     }
+     
+     // Get and set m_totalTranslationX.
+     if (line == FILE_BLOCK_TOTAL_TRANSLATION_X_STRIPPED) {
+       // Get the value contained in the next line, strip the \t and \n chars,
+       // and set the m_totalTranslationX value.
+       std::getline(infile, line);
+       line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+       line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+       // If ignoreHistory is true, we don't load the m_totalTranslationX value.
+       if (!ignoreHistory) {
+         m_organisms[organismTicker].m_totalTranslationX = std::stod(line);
+       }
+       //std::cout << line << ": recording total translation x" << std::endl;
        continue;
      }
      

@@ -52,6 +52,9 @@ const double GAITGENE_CONST_MAX = 2.5;
 const double FITNESS_WEIGHT_ZMP_TRANSITION_TIME = 30;
 const double FITNESS_WEIGHT_ZMP_TRANSITION_COEF = 10;
 
+const double FITNESS_WEIGHT_ZMP_COEF = 50;
+const double FITNESS_WEIGHT_TRANSLATION_X_COEF = 12;
+
 /////////////////////////////////////// File constants ///////////////////////////////////////////////
 
 // Default population filename.
