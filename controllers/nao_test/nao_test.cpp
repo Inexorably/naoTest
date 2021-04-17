@@ -575,7 +575,7 @@ int test(int argc, char **argv) {
   // Load motion files.
   Motion hand_wave("../../motions/HandWave.motion");
   Motion forwards("../../motions/Forwards50.motion");
-  Motion forwardsTest("../../motions/Forwards50.motion");   // Modified walking motion with 2x speed and no hip / ankle roll
+  Motion forwardsTest("../../motions/Forwards50_2x.motion");   // Modified walking motion with 2x speed and no hip / ankle roll
   Motion backwards("../../motions/Backwards.motion");
   Motion side_step_left("../../motions/SideStepLeft.motion");
   Motion side_step_right("../../motions/SideStepRight.motion");
@@ -594,8 +594,8 @@ int test(int argc, char **argv) {
   //Misc sensors
   Camera *cameraTop = robot->getCamera("CameraTop");
   Camera *cameraBottom = robot->getCamera("CameraBottom");
-  cameraTop->enable(4 * timeStep);
-  cameraBottom->enable(4 * timeStep);
+  //cameraTop->enable(4 * timeStep);
+  //cameraBottom->enable(4 * timeStep);
   TouchSensor *fsrL = robot->getTouchSensor("LFsr");
   TouchSensor *fsrR = robot->getTouchSensor("RFsr");
   fsrL->enable(timeStep);
@@ -605,7 +605,7 @@ int test(int argc, char **argv) {
   
   // Generate an organism population of controllers.
   // We use 4 extra inputs in addition to the inputMotors vector: 
-  Population p(1000, inputMotors.size()+4, outputMotors.size());
+  Population p(100, inputMotors.size()+4, outputMotors.size());
   
   // Load p from the default file.  If no such file exists or file is corrupted,
   // the random p created upon construction will not be changed.

@@ -4,13 +4,13 @@
 
 // If the total grf / force feet supporting drops below FOOT_FORCE_MIN, the robot has fallen over
 // and we end the simulation.
-const double FOOT_FORCE_MIN = 40;
+const double FOOT_FORCE_MIN = 30;
 
 // Max simulation time before breaking in seconds.
 const int SIMULATION_TIME_MAX = 60;
 
 // The number of generations of our population we iterate through.
-const int NUM_GENERATIONS = 100;
+const int NUM_GENERATIONS = 1000;
 
 // The number of steps between each control attempt.  Higher values allow less noise but slower response.
 const int STEPS_PER_CONTROL = 4;
@@ -54,7 +54,7 @@ const double FITNESS_WEIGHT_ZMP_TRANSITION_COEF = 10;
 
 const double FITNESS_WEIGHT_ZMP_COEF = 50;
 const double FITNESS_WEIGHT_TRANSLATION_X_COEF = 12;
-const double FITNESS_WEIGHT_TIME_COEF = 0.5;
+const double FITNESS_WEIGHT_TIME_COEF = 0.05;
 
 /////////////////////////////////////// File constants ///////////////////////////////////////////////
 
