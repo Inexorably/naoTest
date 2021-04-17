@@ -604,8 +604,7 @@ int test(int argc, char **argv) {
   //////////////////////////////////////////////////////////////////////////
   
   // Generate an organism population of controllers.
-  // We use 4 extra inputs in addition to the inputMotors vector: 
-  Population p(100, inputMotors.size()+4, outputMotors.size());
+  Population p(100, inputMotors.size(), outputMotors.size());
   
   // Load p from the default file.  If no such file exists or file is corrupted,
   // the random p created upon construction will not be changed.
@@ -660,6 +659,11 @@ int test(int argc, char **argv) {
     
       // Simulate robot.  If robot is still stable at the end of the motion file, break.
       while (robot->step(timeStep) != -1 && robot->getTime() < forwardsTest.getDuration()/1000+1) {
+        // Provide some inital time to allow the robot to crouch.
+        if (robot->getTime() < 0.6) {
+          continue;
+        }
+      
         if (forwardsTest.isOver()) {
           //std::cout << "Motion playback finished at " << robot->getTime() << " s.\n";
           break;
@@ -702,7 +706,7 @@ int test(int argc, char **argv) {
           }
           
           // Put the control inputs into a vector to pass to the control function.
-          std::vector<double> x = {zmplx, zmply, zmprx, zmpry};
+          std::vector<double> x;
           
           // Loop through the control / input motors and put their target positions into the x vector.
           for (auto m : inputMotors) {
