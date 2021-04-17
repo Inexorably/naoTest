@@ -33,7 +33,7 @@ struct Expression {
   // Coefficients for cos, A1*cos(B1*x)-A1 ...
   std::vector<double> m_cos;
   
-  // Coefficients for exp, A1*exp(B1*x)-A1 ...
+  // Coefficients for exp, A1*exp(B1*x) ... can function as a constant with low B1.
   std::vector<double> m_exp;
 };
 
@@ -123,6 +123,12 @@ struct Organism {
     
     // Total translated distance in x.
     double m_totalTranslationX;
+    
+    // The total 'velocity' of the COM.
+    // At each control step, the current COM velocity * control time step is added to this
+    // variable.  The units are m/s * s.  Ie, m_totalCOMVelocity/m_totalStableTime gives the
+    // average COM velocity.
+    double m_totalCOMVelocity;
    
     // Defining comparison operators of organism for sorting / pruning purposes.
     // Compares by getFitness().

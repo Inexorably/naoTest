@@ -50,11 +50,12 @@ const double GAITGENE_CONST_MAX = 2.5;
 // FITNESS_WEIGHT_ZMP_TRANSITION_COEF: the multiplier by which we multiply the zmp 
 // component to add more weighting to balancing.
 const double FITNESS_WEIGHT_ZMP_TRANSITION_TIME = 30;
-const double FITNESS_WEIGHT_ZMP_TRANSITION_COEF = 10;
+const double FITNESS_WEIGHT_ZMP_TRANSITION_COEF = 0;
 
-const double FITNESS_WEIGHT_ZMP_COEF = 50;
+const double FITNESS_WEIGHT_ZMP_COEF = 0;
 const double FITNESS_WEIGHT_TRANSLATION_X_COEF = 12;
 const double FITNESS_WEIGHT_TIME_COEF = 0.05;
+const double FITNESS_WEIGHT_COMV_COEF = 1;
 
 /////////////////////////////////////// File constants ///////////////////////////////////////////////
 
@@ -75,6 +76,7 @@ const std::string FILE_BLOCK_TOTAL_STABLE_TIME = "\t<m_totalStableTime>\n";
 const std::string FILE_BLOCK_NUM_SIMULATIONS = "\t<m_numSimulations>\n";
 const std::string FILE_BLOCK_TOTAL_ZMP_DISTANCE = "\t<m_totalZMPDistance>\n";
 const std::string FILE_BLOCK_TOTAL_TRANSLATION_X = "\t<m_totalTranslationX>\n";
+const std::string FILE_BLOCK_TOTAL_COM_VELOCITY = "\t<m_totalCOMVelocity>\n";
 const std::string FILE_BLOCK_GENETICS = "\t<m_genetics>\n";
 const std::string FILE_BLOCK_EXPRESSIONS = "\t\t<m_expressions>\n";
 const std::string FILE_BLOCK_CONSTANTS = "\t\t<m_constants>\n";
@@ -97,6 +99,7 @@ const std::string FILE_BLOCK_TOTAL_STABLE_TIME_STRIPPED = "\t<m_totalStableTime>
 const std::string FILE_BLOCK_NUM_SIMULATIONS_STRIPPED = "\t<m_numSimulations>";
 const std::string FILE_BLOCK_TOTAL_ZMP_DISTANCE_STRIPPED = "\t<m_totalZMPDistance>";
 const std::string FILE_BLOCK_TOTAL_TRANSLATION_X_STRIPPED = "\t<m_totalTranslationX>";
+const std::string FILE_BLOCK_TOTAL_COM_VELOCITY_STRIPPED = "\t<m_totalCOMVelocity>";
 const std::string FILE_BLOCK_GENETICS_STRIPPED = "\t<m_genetics>";
 const std::string FILE_BLOCK_EXPRESSIONS_STRIPPED = "\t\t<m_expressions>";
 const std::string FILE_BLOCK_CONSTANTS_STRIPPED = "\t\t<m_constants>";

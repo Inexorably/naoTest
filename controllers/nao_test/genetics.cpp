@@ -109,7 +109,7 @@ double Gene::calculateValue(const std::vector<double>& x) const {
     
     // cos
     for (size_t j = 0; j < m_expressions[i].m_cos.size(); j += 2) {
-      result += m_expressions[i].m_cos[j] * cos(x[i] * m_expressions[i].m_cos[j+1]) - m_expressions[i].m_cos[j];
+      result += m_expressions[i].m_cos[j] * cos(x[i] * m_expressions[i].m_cos[j+1]);
     }
     
     //std::cout << "cos: " << result << std::endl;
@@ -191,6 +191,7 @@ Organism::Organism(const int& i, const int& o) : m_numInputVars(i), m_numOutputV
   m_totalStableTime = 0;
   m_numSimulations = 0;
   m_totalZMPDistance = 0;
+  m_totalCOMVelocity = 0;
 }
 
 // Mutate the current organism.  Each expression has a chanceMutation chance of changing.
@@ -256,7 +257,12 @@ double Organism::getFitness() const {
   
   double translationXComponent = FITNESS_WEIGHT_TRANSLATION_X_COEF*m_totalTranslationX/static_cast<double>(m_numSimulations);
   
-  return (timeComponent + zmpComponent + translationXComponent);
+  // We divide by the total stable time, not the number of simulations, so that we do not punish
+  // (note that this is a negative reward, ie -1*...) runs that are stable for longer more than
+  // runs that quickly destabilize.
+  double comVelocityComponent = FITNESS_WEIGHT_COMV_COEF*m_totalCOMVelocity/m_totalStableTime;
+  
+  return (timeComponent + zmpComponent + translationXComponent + comVelocityComponent);
 }
 
 // Defining comparison operators of organism for sorting / pruning purposes.
@@ -290,6 +296,8 @@ void Organism::save(const std::string& filename) const {
   outfile << "\t\t" << std::to_string(m_totalZMPDistance) << '\n';
   outfile << FILE_BLOCK_TOTAL_TRANSLATION_X;
   outfile << "\t\t" << std::to_string(m_totalTranslationX) << '\n';
+  outfile << FILE_BLOCK_TOTAL_COM_VELOCITY;
+  outfile << "\t\t" << std::to_string(m_totalCOMVelocity) << '\n';
 
   // Write each organisms m_genetics, of size m_numOutputVars.
   outfile << FILE_BLOCK_GENETICS;
@@ -541,6 +549,8 @@ void Population::save(const std::string& filename) const {
     outfile << "\t\t" << std::to_string(m_organisms[i].m_totalZMPDistance) << '\n';
     outfile << FILE_BLOCK_TOTAL_TRANSLATION_X;
     outfile << "\t\t" << std::to_string(m_organisms[i].m_totalTranslationX) << '\n';
+    outfile << FILE_BLOCK_TOTAL_COM_VELOCITY;
+    outfile << "\t\t" << std::to_string(m_organisms[i].m_totalCOMVelocity) << '\n';
 
     // Write each organisms m_genetics, of size m_numOutputVars.
     outfile << FILE_BLOCK_GENETICS;
@@ -735,6 +745,21 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
          m_organisms[organismTicker].m_totalTranslationX = std::stod(line);
        }
        //std::cout << line << ": recording total translation x" << std::endl;
+       continue;
+     }
+     
+     // Get and set m_totalCOMVelocity.
+     if (line == FILE_BLOCK_TOTAL_COM_VELOCITY_STRIPPED) {
+       // Get the value contained in the next line, strip the \t and \n chars,
+       // and set the m_totalTranslationX value.
+       std::getline(infile, line);
+       line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+       line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+       // If ignoreHistory is true, we don't load the m_totalCOMVelocity value.
+       if (!ignoreHistory) {
+         m_organisms[organismTicker].m_totalCOMVelocity = std::stod(line);
+       }
+       //std::cout << line << ": recording total COM velocity" << std::endl;
        continue;
      }
      

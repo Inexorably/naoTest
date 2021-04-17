@@ -575,7 +575,7 @@ int test(int argc, char **argv) {
   // Load motion files.
   Motion hand_wave("../../motions/HandWave.motion");
   Motion forwards("../../motions/Forwards50.motion");
-  Motion forwardsTest("../../motions/Forwards50_2x.motion");   // Modified walking motion with 2x speed and no hip / ankle roll
+  Motion forwardsTest("../../motions/Forwards50_1.7x.motion");   // Modified walking motion with 2x speed and no hip / ankle roll
   Motion backwards("../../motions/Backwards.motion");
   Motion side_step_left("../../motions/SideStepLeft.motion");
   Motion side_step_right("../../motions/SideStepRight.motion");
@@ -645,8 +645,18 @@ int test(int argc, char **argv) {
       // False means that right leg is support, true means left leg is support.
       bool swingPhase = false;
       
-      //
-     forwardsTest.play();
+      // We want to minimize the kinetic energy by minimizing COM movement, so we track the
+      // positions of the com in order to track the velocity.  We initialize it to the inital value.
+      const double* com_0 = robot_node->getCenterOfMass()
+      std::vector<double> com_prev;
+      
+      // Store the previous values in a vector, as the array pointed to is deallocated each time step.
+      for (int i = 0; i < 3; i++) {
+        com_prev.push_back(com_0[i]);
+      }
+      
+      // Play the motion.
+      forwardsTest.play();
     
       // Simulate robot.  If robot is still stable at the end of the motion file, break.
       while (robot->step(timeStep) != -1 && robot->getTime() < forwardsTest.getDuration()/1000+1) {
@@ -659,6 +669,20 @@ int test(int argc, char **argv) {
         static int ticker = 0;
         ticker++;
         if (ticker > STEPS_PER_CONTROL) {
+          // Get the center of mass.
+          const double* com = robot_node->getCenterOfMass();
+          
+          // Find the magnitude of the velocity vector of the COM.
+          double comV = sqrt(pow(com[0]-com_prev[0],2)+pow(com[1]-com_prev[1],2)+pow(com[2]-com_prev[2],2));
+          
+          // Add the velocity magnitude to the organism's member variable.
+          o.m_totalCOMVelocity += comV * timeStep * STEPS_PER_CONTROL;
+          
+          // Set the current COM to be the previous COM.
+          for (int i = 0; i < 3; i++) {
+            com_prev.push_back(com_0[i]);
+          }
+        
           // Get the inputs (zmpx, zmpy, respective motor target position).
           auto zmps = getZMPCoordinates(fsrL, fsrR);
           double zmplx = zmps[0].m_x;
