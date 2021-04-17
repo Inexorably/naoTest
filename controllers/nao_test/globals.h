@@ -55,7 +55,7 @@ const double FITNESS_WEIGHT_ZMP_TRANSITION_COEF = 0;
 const double FITNESS_WEIGHT_ZMP_COEF = 0;
 const double FITNESS_WEIGHT_TRANSLATION_X_COEF = 12;
 const double FITNESS_WEIGHT_TIME_COEF = 0.05;
-const double FITNESS_WEIGHT_COMV_COEF = 1;
+const double FITNESS_WEIGHT_COMV_COEF = 0.001;
 
 /////////////////////////////////////// File constants ///////////////////////////////////////////////
 

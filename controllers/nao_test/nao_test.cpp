@@ -647,7 +647,7 @@ int test(int argc, char **argv) {
       
       // We want to minimize the kinetic energy by minimizing COM movement, so we track the
       // positions of the com in order to track the velocity.  We initialize it to the inital value.
-      const double* com_0 = robot_node->getCenterOfMass()
+      const double* com_0 = robot_node->getCenterOfMass();
       std::vector<double> com_prev;
       
       // Store the previous values in a vector, as the array pointed to is deallocated each time step.

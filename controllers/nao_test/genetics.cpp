@@ -260,7 +260,7 @@ double Organism::getFitness() const {
   // We divide by the total stable time, not the number of simulations, so that we do not punish
   // (note that this is a negative reward, ie -1*...) runs that are stable for longer more than
   // runs that quickly destabilize.
-  double comVelocityComponent = FITNESS_WEIGHT_COMV_COEF*m_totalCOMVelocity/m_totalStableTime;
+  double comVelocityComponent = -1*FITNESS_WEIGHT_COMV_COEF*m_totalCOMVelocity/m_totalStableTime;
   
   return (timeComponent + zmpComponent + translationXComponent + comVelocityComponent);
 }
