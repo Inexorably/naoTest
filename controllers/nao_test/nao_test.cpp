@@ -779,9 +779,12 @@ int test(int argc, char **argv) {
       // If this is a new best fitness scoring organism, we save it and print to console.
       if (fitnessScore > bestFitnessScore) {
         bestFitnessScore = fitnessScore;
+        std::cout << "-------------------------------\n";
         std::cout << "New best fitness score: " << bestFitnessScore << std::endl;
         std::string bestOrganismFilename = "pops/star.organism";
-        std::cout << "Saving best organism to: " << bestOrganismFilename << std::endl;
+        std::cout << "Saving best organism to: " << bestOrganismFilename << "\n";
+        o.printFitnessComponents();
+        std::cout << "-------------------------------\n";
         o.save(bestOrganismFilename);
       }
       

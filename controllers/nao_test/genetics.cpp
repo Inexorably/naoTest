@@ -265,6 +265,30 @@ double Organism::getFitness() const {
   return (timeComponent + zmpComponent + translationXComponent + comVelocityComponent);
 }
 
+// Print the fitness components to console so we can see if we need to adjust the weights.
+void Organism::printFitnessComponents() const {
+  // We base the fitness score on the following components.
+  double timeComponent = FITNESS_WEIGHT_TIME_COEF*m_totalStableTime/static_cast<double>(m_numSimulations);
+  double zmpComponent = -1*FITNESS_WEIGHT_ZMP_COEF*m_totalZMPDistance/static_cast<double>(m_numSimulations);  // Higher zmp distances are punished, so we mult by -1.
+  
+  // If we exceed the transition time, greatly increase the zmp component weighting to
+  // encourage the robot to minimize zmp.
+  if (timeComponent > FITNESS_WEIGHT_ZMP_TRANSITION_TIME) {
+    zmpComponent = zmpComponent * FITNESS_WEIGHT_ZMP_TRANSITION_COEF;
+  }
+  
+  double translationXComponent = FITNESS_WEIGHT_TRANSLATION_X_COEF*m_totalTranslationX/static_cast<double>(m_numSimulations);
+  
+  // We divide by the total stable time, not the number of simulations, so that we do not punish
+  // (note that this is a negative reward, ie -1*...) runs that are stable for longer more than
+  // runs that quickly destabilize.
+  double comVelocityComponent = -1*FITNESS_WEIGHT_COMV_COEF*m_totalCOMVelocity/m_totalStableTime;
+  
+  std::cout << "time: " << timeComponent << ", zmp: " << zmpComponent << ", trans_x: " << translationXComponent << ", comv_yz: " << comVelocityComponent << std::endl;
+  
+  return;
+}
+
 // Defining comparison operators of organism for sorting / pruning purposes.
 // Compares by getFitness().
 bool Organism::operator < (const Organism& rhs) const {

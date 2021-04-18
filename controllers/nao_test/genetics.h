@@ -111,6 +111,9 @@ struct Organism {
     // the average distance of zmp coordinates from the origin.
     double getFitness() const;
     
+    // Print the fitness components to console so we can see if we need to adjust the weights.
+    void printFitnessComponents() const;
+    
     // Total time stable accross all simulations, in seconds.
     double m_totalStableTime;
 
