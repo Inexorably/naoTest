@@ -629,6 +629,15 @@ int test(int argc, char **argv) {
     // Track the runtime of each generation to add to m_runtime of the population object.
     auto start = std::chrono::system_clock::now();
     
+    // Track the organism properties of each generation, so that we can calculate the
+    // population standard deviations in order to increase the mutation rate when stagnation is
+    // detected.  Note that we use the fitness 'components' of each property, which have been weighted,
+    // as these are all of the same order of magnitude.
+    std::vector<double> timeComponents;
+    std::vector<double> zmpComponents;
+    std::vector<double> translationXComponent;
+    std::vector<double> comVelocityComponent;
+
     // For each organism in the population, run the simulation in order to generate fitness values.
     unsigned int progressTickerA = 0;   // For printing to console / debugging.
     unsigned int progressTickerB = 0;
@@ -659,16 +668,6 @@ int test(int argc, char **argv) {
       for (int i = 0; i < 3; i++) {
         com_prev.push_back(com_0[i]);
       }
-      
-      /*
-      // Testing
-      while (robot->step(timeStep) != -1) {
-        std::vector<double> test = {0.3, 0, 0, 0};
-        for (size_t i = 0; i < outputMotorsR.size(); i++) {
-          outputMotorsR[i]->setPosition(test[i]);
-          outputMotorsL[i]->setPosition(-1*test[i]);
-        }
-      }*/
       
       // Play the motion.
       forwardsTest.play();
@@ -776,6 +775,15 @@ int test(int argc, char **argv) {
       // m_totalStableTime and m_numSimulations.
       double fitnessScore = o.getFitness();
       
+      // Push back the individual organism weighted components for each property onto their
+      // respective vectors so that we can find the population std dev for each generation
+      // to adjust the mutation rate going forward.
+      std::vector<double> components = o.getFitnessComponents();
+      timeComponents.push_back(components[0]);
+      zmpComponents.push_back(components[1]);
+      translationXComponent.push_back(components[2]);
+      comVelocityComponent.push_back(components[3]);
+      
       // If this is a new best fitness scoring organism, we save it and print to console.
       if (fitnessScore > bestFitnessScore) {
         bestFitnessScore = fitnessScore;
@@ -807,6 +815,10 @@ int test(int argc, char **argv) {
     std::cout << "Saving to historic generation population file at pops/generation_" << p.m_generation << ".pop\n";
     std::string generationFilename = "pops/generation_" + std::to_string(p.m_generation) + ".pop";
     p.save(generationFilename);
+    
+    // Adjust the mutation rate based on the standard deviation of the fitness components to prevent stagnation.
+    double totalStdDev = sqrt(pow(getStdDev(timeComponents),2)+pow(getStdDev(zmpComponents),2)+pow(getStdDev(translationXComponent),2)+pow(getStdDev(comVelocityComponent),2));
+    std::cout << "totalStdDev: " << totalStdDev << std::endl;
     
     // Save best performing half of population (POPULATION_SIZE/2).
     std::cout << "Pruning weakest half of population.\n";
@@ -898,7 +910,7 @@ void writePopulationInfo(const std::string& outfilename, const int& n, const int
   return;
 }
 
-int main(int argc, char **argv) {  
+int main(int argc, char **argv) {    
   // Testing gait controller evolution.
   test(argc, argv);
 

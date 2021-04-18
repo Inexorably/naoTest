@@ -285,8 +285,6 @@ std::vector<double> Organism::getFitnessComponents() const {
   // runs that quickly destabilize.
   double comVelocityComponent = -1*FITNESS_WEIGHT_COMV_COEF*m_totalCOMVelocity/m_totalStableTime;
   
-  std::cout << "time: " << timeComponent << ", zmp: " << zmpComponent << ", trans_x: " << translationXComponent << ", comv_yz: " << comVelocityComponent << std::endl;
-  
   // Push the values into a vector and return.
   std::vector<double> temp;
   temp.push_back(timeComponent);
@@ -297,7 +295,7 @@ std::vector<double> Organism::getFitnessComponents() const {
 }
 
 // Print the fitness components to console so we can see if we need to adjust the weights.
-void Organism::getFitnessComponents() const {
+void Organism::printFitnessComponents() const {
   // We base the fitness score on the following components.
   double timeComponent = FITNESS_WEIGHT_TIME_COEF*m_totalStableTime/static_cast<double>(m_numSimulations);
   double zmpComponent = -1*FITNESS_WEIGHT_ZMP_COEF*m_totalZMPDistance/static_cast<double>(m_numSimulations);  // Higher zmp distances are punished, so we mult by -1.
