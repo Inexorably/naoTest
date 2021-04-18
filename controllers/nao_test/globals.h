@@ -30,7 +30,7 @@ const double LAMBDA = 0.02;
 
 // Determines the max number of instances of a type of function on a input variable an expression can have.
 // See Expression class in "genetics.h".
-const int EXPRESSION_MAX_SUBLENGTHS = 4;
+const int EXPRESSION_MAX_SUBLENGTHS = 1;
 
 // Expression constant min / max values for non exponential values.
 const double EXPRESSION_CONST_MIN = -2;
@@ -53,9 +53,9 @@ const double FITNESS_WEIGHT_ZMP_TRANSITION_TIME = 30;
 const double FITNESS_WEIGHT_ZMP_TRANSITION_COEF = 0;
 
 const double FITNESS_WEIGHT_ZMP_COEF = 0;
-const double FITNESS_WEIGHT_TRANSLATION_X_COEF = 12;
-const double FITNESS_WEIGHT_TIME_COEF = 0.05;
-const double FITNESS_WEIGHT_COMV_COEF = 0.001;
+const double FITNESS_WEIGHT_TRANSLATION_X_COEF = 3;
+const double FITNESS_WEIGHT_TIME_COEF = 0.2;
+const double FITNESS_WEIGHT_COMV_COEF = 20;
 
 /////////////////////////////////////// File constants ///////////////////////////////////////////////
 

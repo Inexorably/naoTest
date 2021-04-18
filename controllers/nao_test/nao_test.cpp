@@ -575,7 +575,7 @@ int test(int argc, char **argv) {
   // Load motion files.
   Motion hand_wave("../../motions/HandWave.motion");
   Motion forwards("../../motions/Forwards50.motion");
-  Motion forwardsTest("../../motions/Forwards50_1.7x.motion");   // Modified walking motion with 2x speed and no hip / ankle roll
+  Motion forwardsTest("../../motions/Forwards50_1.2x_v_p.motion");   // Modified walking motion with 2x speed and no hip / ankle roll
   Motion backwards("../../motions/Backwards.motion");
   Motion side_step_left("../../motions/SideStepLeft.motion");
   Motion side_step_right("../../motions/SideStepRight.motion");
@@ -585,11 +585,17 @@ int test(int argc, char **argv) {
   // For iterating through:
   // The motors we use as inputs for the controller (in addition to the zmp coords).
   // We get these with getTargetPosition().
-  std::vector<Motor*> inputMotors = {LHipYawPitch,LHipRoll,LHipPitch,LKneePitch,LAnklePitch,LAnkleRoll,RHipYawPitch,RHipRoll,RHipPitch,RKneePitch,RAnklePitch,RAnkleRoll};
+  // In order to force symmetry, we use mirrored input vectors where the order of L and R are swapped.
+  std::vector<Motor*> inputMotorsR = {RHipYawPitch,RHipRoll,RHipPitch,RKneePitch,RAnklePitch,RAnkleRoll};
+  std::vector<Motor*> inputMotorsL = {LHipYawPitch,LHipRoll,LHipPitch,LKneePitch,LAnklePitch,LAnkleRoll};
   
   // The motors we use as outputs that the controller provides target positions to.
   // We use these with setPosition().
-  std::vector<Motor*> outputMotors = {HeadYaw, HeadPitch, RShoulderPitch, RShoulderRoll, RElbowYaw, RElbowRoll, LShoulderPitch, LShoulderRoll, LElbowYaw, LElbowRoll};
+  // In order to enforce symmetry, we split the output motors into the left and right side of the body.
+  // This means that for a given organism, we can call calculateValues and provide mirrored inputs
+  // and get mirrored outputs.  This should reduce the search space by 75% (n^2, and reducing n by half).
+  std::vector<Motor*> outputMotorsR = {RShoulderPitch, RShoulderRoll, RElbowYaw, RElbowRoll};
+  std::vector<Motor*> outputMotorsL = {LShoulderPitch, LShoulderRoll, LElbowYaw, LElbowRoll};
 
   //Misc sensors
   Camera *cameraTop = robot->getCamera("CameraTop");
@@ -602,9 +608,9 @@ int test(int argc, char **argv) {
   fsrR->enable(timeStep);
   
   //////////////////////////////////////////////////////////////////////////
-  
+
   // Generate an organism population of controllers.
-  Population p(100, inputMotors.size(), outputMotors.size());
+  Population p(400, inputMotorsR.size(), outputMotorsR.size());
   
   // Load p from the default file.  If no such file exists or file is corrupted,
   // the random p created upon construction will not be changed.
@@ -654,6 +660,16 @@ int test(int argc, char **argv) {
         com_prev.push_back(com_0[i]);
       }
       
+      /*
+      // Testing
+      while (robot->step(timeStep) != -1) {
+        std::vector<double> test = {0.3, 0, 0, 0};
+        for (size_t i = 0; i < outputMotorsR.size(); i++) {
+          outputMotorsR[i]->setPosition(test[i]);
+          outputMotorsL[i]->setPosition(-1*test[i]);
+        }
+      }*/
+      
       // Play the motion.
       forwardsTest.play();
     
@@ -680,11 +696,11 @@ int test(int argc, char **argv) {
           double comV = sqrt(pow(com[0]-com_prev[0],2)+pow(com[1]-com_prev[1],2)+pow(com[2]-com_prev[2],2));
           
           // Add the velocity magnitude to the organism's member variable.
-          o.m_totalCOMVelocity += comV * timeStep * STEPS_PER_CONTROL;
+          o.m_totalCOMVelocity += comV / (timeStep * STEPS_PER_CONTROL);
           
           // Set the current COM to be the previous COM.
           for (int i = 0; i < 3; i++) {
-            com_prev.push_back(com_0[i]);
+            com_prev.push_back(com[i]);
           }
         
           // Get the inputs (zmpx, zmpy, respective motor target position).
@@ -706,23 +722,34 @@ int test(int argc, char **argv) {
           }
           
           // Put the control inputs into a vector to pass to the control function.
-          std::vector<double> x;
+          std::vector<double> xR;
+          std::vector<double> xL;
           
           // Loop through the control / input motors and put their target positions into the x vector.
-          for (auto m : inputMotors) {
-            x.push_back(m->getTargetPosition());
+          for (auto m : inputMotorsR) {
+            xR.push_back(m->getTargetPosition());
+          }
+          for (auto m : inputMotorsL) {
+            xL.push_back(m->getTargetPosition());
           }
             
           // Generate each output variable based on the input (ie, loop through the system of equations).
+          // Note that we need to multiply some inputs by negative to correctly mirror the motions.
+          // The ShoulderRoll, ElbowYaw, and ElbowRoll should be multiplied by -1.  The ShoulderPitch should not.
+          std::vector<double> mirror = {1, -1, -1, -1};
           for (int j = 0; j < p.m_numOutputVars; j++) {
             // Find the respective motor input position and clamp it to the min:max bounds of that motor.
-            double input = o.m_genetics[j].calculateValue(x);
+            double inputR = o.m_genetics[j].calculateValue(xL);
+            double inputL = mirror[j]*o.m_genetics[j].calculateValue(xR);
             
             // Handle NaN results.  If is NaN, set to zero.  Else, don't modify.            
-            input = std::isnan(input) ? 0 : input;
+            inputR = std::isnan(inputR) ? 0 : inputR;
+            inputL = std::isnan(inputL) ? 0 : inputL;
             
-            input = clamp(input, outputMotors[j]->getMinPosition(), outputMotors[j]->getMaxPosition());   
-            outputMotors[j]->setPosition(input);
+            inputR = clamp(inputR, outputMotorsR[j]->getMinPosition(), outputMotorsR[j]->getMaxPosition());   
+            inputL = clamp(inputL, outputMotorsL[j]->getMinPosition(), outputMotorsL[j]->getMaxPosition());   
+            outputMotorsR[j]->setPosition(inputR);
+            outputMotorsL[j]->setPosition(inputL);
           }
           
           ticker = 0;
