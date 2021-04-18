@@ -112,6 +112,11 @@ struct Organism {
     double getFitness() const;
     
     // Print the fitness components to console so we can see if we need to adjust the weights.
+    // Returns the fitness components in a vector of doubles.
+    // Order: time, zmp, trans_x, comv_yz.
+    std::vector<double> getFitnessComponents() const;
+    
+    // Print the fitness components to console so we can see if we need to adjust the weights.
     void printFitnessComponents() const;
     
     // Total time stable accross all simulations, in seconds.
