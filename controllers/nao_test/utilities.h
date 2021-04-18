@@ -9,6 +9,7 @@
 #include <iostream>
 #include <random>
 #include <math.h>
+#include <algorithm>
 
 #include "globals.h"
 
@@ -50,3 +51,8 @@ bool trueWithProbability(const double p);
 // Returns false if the robot has fallen over, as defined per total grf on feet < FOOT_FORCE_MIN.
 // Else returns true.
 bool isStable(TouchSensor *fsrL, TouchSensor *fsrR);
+
+// Takes a vector of doubles v.
+// Returns the population standard deviation NOT sample standard deviation.
+// Source since lazy: https://stackoverflow.com/questions/7616511/
+double getStdDev(const std::vector<double>& v);

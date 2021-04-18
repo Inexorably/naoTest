@@ -33,7 +33,7 @@ struct Expression {
   // Coefficients for cos, A1*cos(B1*x)-A1 ...
   std::vector<double> m_cos;
   
-  // Coefficients for exp, A1*exp(B1*x)-A1 ...
+  // Coefficients for exp, A1*exp(B1*x) ... can function as a constant with low B1.
   std::vector<double> m_exp;
 };
 
@@ -86,8 +86,8 @@ struct Organism {
     // Construct an organism with o (m_numOutputVars) Gene members in m_genetics.
     Organism(const int& i, const int& o);
 
-    // Mutate the current organism.
-    void mutate();
+    // Mutate the current organism.  Each expression has a p chance of changing.
+    void mutate(const double& p);
     
     // Creates a child organism with the genetics of *this and partner organism.
     Organism reproduce(const Organism& partner) const;
@@ -104,12 +104,17 @@ struct Organism {
     int m_numInputVars;
     int m_numOutputVars;
     
-    // Mutation probability between 0 to 1 for a given gene.
-    double m_chanceMutation;
-    
     // The fitness of the organism, determined by average time before falling in simulation and
     // the average distance of zmp coordinates from the origin.
     double getFitness() const;
+    
+    // Print the fitness components to console so we can see if we need to adjust the weights.
+    // Returns the fitness components in a vector of doubles.
+    // Order: time, zmp, trans_x, comv_yz.
+    std::vector<double> getFitnessComponents() const;
+    
+    // Print the fitness components to console so we can see if we need to adjust the weights.
+    void printFitnessComponents() const;
     
     // Total time stable accross all simulations, in seconds.
     double m_totalStableTime;
@@ -120,6 +125,15 @@ struct Organism {
     // The TOTAL zmp distance from 0, 0, ie if zmp is at 1, 1 for 2 seconds, the
     // m_totalZMPDistance value would be sqrt(2)*2.  Units are meters.
     double m_totalZMPDistance;
+    
+    // Total translated distance in x.
+    double m_totalTranslationX;
+    
+    // The total 'velocity' of the COM.
+    // At each control step, the current COM velocity * control time step is added to this
+    // variable.  The units are m/s * s.  Ie, m_totalCOMVelocity/m_totalStableTime gives the
+    // average COM velocity.
+    double m_totalCOMVelocity;
    
     // Defining comparison operators of organism for sorting / pruning purposes.
     // Compares by getFitness().

@@ -109,7 +109,7 @@ double Gene::calculateValue(const std::vector<double>& x) const {
     
     // cos
     for (size_t j = 0; j < m_expressions[i].m_cos.size(); j += 2) {
-      result += m_expressions[i].m_cos[j] * cos(x[i] * m_expressions[i].m_cos[j+1]) - m_expressions[i].m_cos[j];
+      result += m_expressions[i].m_cos[j] * cos(x[i] * m_expressions[i].m_cos[j+1]);
     }
     
     //std::cout << "cos: " << result << std::endl;
@@ -186,21 +186,20 @@ Organism::Organism(const int& i, const int& o) : m_numInputVars(i), m_numOutputV
     m_genetics.push_back(temp);
   }
   
-  m_chanceMutation = 1.0/static_cast<double>(m_numInputVars * m_numOutputVars);
-  
   m_totalStableTime = 0;
   m_numSimulations = 0;
   m_totalZMPDistance = 0;
+  m_totalCOMVelocity = 0;
 }
 
-// Mutate the current organism.  Each expression has a chanceMutation chance of changing.
-void Organism::mutate() {
+// Mutate the current organism.  Each expression has a p chance of changing.
+void Organism::mutate(const double& p) {
   //Loop through the m_genetics and m_expressions and randomly change the expressions.
   // m_genetics is of size m_numOutputVars, and each Gene g.m_expressions is of size m_numInputVars.
   for (Gene& g : m_genetics) {
     for (Expression& e : g.m_expressions) {
       // Randomly replace one of the expressions with a new one.
-      if (trueWithProbability(m_chanceMutation)) {
+      if (trueWithProbability(p)) {
         e = Expression();
       }
     }
@@ -245,8 +244,8 @@ double Organism::getFitness() const {
   }
   
   // We base the fitness score on the following components.
-  double timeComponent = m_totalStableTime/static_cast<double>(m_numSimulations);
-  double zmpComponent = (m_totalStableTime*sqrt(pow(FOOT_WIDTH, 2)+pow(FOOT_LENGTH, 2))-m_totalZMPDistance)/static_cast<double>(m_numSimulations);
+  double timeComponent = FITNESS_WEIGHT_TIME_COEF*m_totalStableTime/static_cast<double>(m_numSimulations);
+  double zmpComponent = -1*FITNESS_WEIGHT_ZMP_COEF*m_totalZMPDistance/static_cast<double>(m_numSimulations);  // Higher zmp distances are punished, so we mult by -1.
   
   // If we exceed the transition time, greatly increase the zmp component weighting to
   // encourage the robot to minimize zmp.
@@ -254,7 +253,67 @@ double Organism::getFitness() const {
     zmpComponent = zmpComponent * FITNESS_WEIGHT_ZMP_TRANSITION_COEF;
   }
   
-  return (timeComponent + zmpComponent);
+  double translationXComponent = FITNESS_WEIGHT_TRANSLATION_X_COEF*m_totalTranslationX/static_cast<double>(m_numSimulations);
+  
+  // We divide by the total stable time, not the number of simulations, so that we do not punish
+  // (note that this is a negative reward, ie -1*...) runs that are stable for longer more than
+  // runs that quickly destabilize.
+  double comVelocityComponent = -1*FITNESS_WEIGHT_COMV_COEF*m_totalCOMVelocity/m_totalStableTime;
+  
+  return (timeComponent + zmpComponent + translationXComponent + comVelocityComponent);
+}
+
+// Returns the fitness components in a vector of doubles.
+// Order: time, zmp, trans_x, comv_yz.
+std::vector<double> Organism::getFitnessComponents() const {
+  // We base the fitness score on the following components.
+  double timeComponent = FITNESS_WEIGHT_TIME_COEF*m_totalStableTime/static_cast<double>(m_numSimulations);
+  double zmpComponent = -1*FITNESS_WEIGHT_ZMP_COEF*m_totalZMPDistance/static_cast<double>(m_numSimulations);  // Higher zmp distances are punished, so we mult by -1.
+  
+  // If we exceed the transition time, greatly increase the zmp component weighting to
+  // encourage the robot to minimize zmp.
+  if (timeComponent > FITNESS_WEIGHT_ZMP_TRANSITION_TIME) {
+    zmpComponent = zmpComponent * FITNESS_WEIGHT_ZMP_TRANSITION_COEF;
+  }
+  
+  double translationXComponent = FITNESS_WEIGHT_TRANSLATION_X_COEF*m_totalTranslationX/static_cast<double>(m_numSimulations);
+  
+  // We divide by the total stable time, not the number of simulations, so that we do not punish
+  // (note that this is a negative reward, ie -1*...) runs that are stable for longer more than
+  // runs that quickly destabilize.
+  double comVelocityComponent = -1*FITNESS_WEIGHT_COMV_COEF*m_totalCOMVelocity/m_totalStableTime;
+  
+  // Push the values into a vector and return.
+  std::vector<double> temp;
+  temp.push_back(timeComponent);
+  temp.push_back(zmpComponent);
+  temp.push_back(translationXComponent);
+  temp.push_back(comVelocityComponent);
+  return temp;
+}
+
+// Print the fitness components to console so we can see if we need to adjust the weights.
+void Organism::printFitnessComponents() const {
+  // We base the fitness score on the following components.
+  double timeComponent = FITNESS_WEIGHT_TIME_COEF*m_totalStableTime/static_cast<double>(m_numSimulations);
+  double zmpComponent = -1*FITNESS_WEIGHT_ZMP_COEF*m_totalZMPDistance/static_cast<double>(m_numSimulations);  // Higher zmp distances are punished, so we mult by -1.
+  
+  // If we exceed the transition time, greatly increase the zmp component weighting to
+  // encourage the robot to minimize zmp.
+  if (timeComponent > FITNESS_WEIGHT_ZMP_TRANSITION_TIME) {
+    zmpComponent = zmpComponent * FITNESS_WEIGHT_ZMP_TRANSITION_COEF;
+  }
+  
+  double translationXComponent = FITNESS_WEIGHT_TRANSLATION_X_COEF*m_totalTranslationX/static_cast<double>(m_numSimulations);
+  
+  // We divide by the total stable time, not the number of simulations, so that we do not punish
+  // (note that this is a negative reward, ie -1*...) runs that are stable for longer more than
+  // runs that quickly destabilize.
+  double comVelocityComponent = -1*FITNESS_WEIGHT_COMV_COEF*m_totalCOMVelocity/m_totalStableTime;
+  
+  std::cout << "time: " << timeComponent << ", zmp: " << zmpComponent << ", trans_x: " << translationXComponent << ", comv_yz: " << comVelocityComponent << std::endl;
+  
+  return;
 }
 
 // Defining comparison operators of organism for sorting / pruning purposes.
@@ -286,6 +345,10 @@ void Organism::save(const std::string& filename) const {
   outfile << "\t\t" << std::to_string(m_numSimulations) << '\n';
   outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
   outfile << "\t\t" << std::to_string(m_totalZMPDistance) << '\n';
+  outfile << FILE_BLOCK_TOTAL_TRANSLATION_X;
+  outfile << "\t\t" << std::to_string(m_totalTranslationX) << '\n';
+  outfile << FILE_BLOCK_TOTAL_COM_VELOCITY;
+  outfile << "\t\t" << std::to_string(m_totalCOMVelocity) << '\n';
 
   // Write each organisms m_genetics, of size m_numOutputVars.
   outfile << FILE_BLOCK_GENETICS;
@@ -491,7 +554,7 @@ void Population::mutateOrganisms() {
     Organism copy = m_organisms[distI(mt)];
     
     // Mutate the copy organism.
-    copy.mutate();
+    copy.mutate(m_chanceMutation);
     
     // Push back the mutated copy.
     mutations.push_back(copy);
@@ -523,6 +586,9 @@ void Population::save(const std::string& filename) const {
   outfile << "\t\t" << std::to_string(m_numInputVars) << '\n';
   outfile << FILE_BLOCK_NUM_OUTPUT_VARS;
   outfile << "\t\t" << std::to_string(m_numOutputVars) << '\n';
+  outfile << FILE_BLOCK_CHANCE_MUTATION;
+  outfile << "\t\t" << std::to_string(m_chanceMutation) << '\n';
+  
   
   // Output each organism to the file.
   for (unsigned int i = 0; i < m_organisms.size(); i++) {
@@ -535,6 +601,10 @@ void Population::save(const std::string& filename) const {
     outfile << "\t\t" << std::to_string(m_organisms[i].m_numSimulations) << '\n';
     outfile << FILE_BLOCK_TOTAL_ZMP_DISTANCE;
     outfile << "\t\t" << std::to_string(m_organisms[i].m_totalZMPDistance) << '\n';
+    outfile << FILE_BLOCK_TOTAL_TRANSLATION_X;
+    outfile << "\t\t" << std::to_string(m_organisms[i].m_totalTranslationX) << '\n';
+    outfile << FILE_BLOCK_TOTAL_COM_VELOCITY;
+    outfile << "\t\t" << std::to_string(m_organisms[i].m_totalCOMVelocity) << '\n';
 
     // Write each organisms m_genetics, of size m_numOutputVars.
     outfile << FILE_BLOCK_GENETICS;
@@ -634,6 +704,16 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
   std::getline(infile, line);        // <m_numOutputVars>
   std::getline(infile, line);        // 10
   
+  // Get the mutation chance.
+  std::getline(infile, line);        // <m_chanceMutation>
+  std::getline(infile, line);        // 1
+  // Clean and set the m_generation value if we are not ignoring history.
+  line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+  line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+  if (!ignoreHistory) {
+    m_chanceMutation = std::stod(line);
+  }
+  
   // organismTicker is the index of the current organism we are working on.  When we
   // encounter a <organism> line, we increment this ticker.  Thus, we start at -1 as
   // we will encounter such a line immediately for the organism at 0 index.
@@ -714,6 +794,36 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
          m_organisms[organismTicker].m_totalZMPDistance = std::stod(line);
        }
        //std::cout << line << ": recording total zmp distance" << std::endl;
+       continue;
+     }
+     
+     // Get and set m_totalTranslationX.
+     if (line == FILE_BLOCK_TOTAL_TRANSLATION_X_STRIPPED) {
+       // Get the value contained in the next line, strip the \t and \n chars,
+       // and set the m_totalTranslationX value.
+       std::getline(infile, line);
+       line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+       line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+       // If ignoreHistory is true, we don't load the m_totalTranslationX value.
+       if (!ignoreHistory) {
+         m_organisms[organismTicker].m_totalTranslationX = std::stod(line);
+       }
+       //std::cout << line << ": recording total translation x" << std::endl;
+       continue;
+     }
+     
+     // Get and set m_totalCOMVelocity.
+     if (line == FILE_BLOCK_TOTAL_COM_VELOCITY_STRIPPED) {
+       // Get the value contained in the next line, strip the \t and \n chars,
+       // and set the m_totalTranslationX value.
+       std::getline(infile, line);
+       line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+       line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+       // If ignoreHistory is true, we don't load the m_totalCOMVelocity value.
+       if (!ignoreHistory) {
+         m_organisms[organismTicker].m_totalCOMVelocity = std::stod(line);
+       }
+       //std::cout << line << ": recording total COM velocity" << std::endl;
        continue;
      }
      
