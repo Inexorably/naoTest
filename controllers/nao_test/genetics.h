@@ -86,8 +86,8 @@ struct Organism {
     // Construct an organism with o (m_numOutputVars) Gene members in m_genetics.
     Organism(const int& i, const int& o);
 
-    // Mutate the current organism.
-    void mutate();
+    // Mutate the current organism.  Each expression has a p chance of changing.
+    void mutate(const double& p);
     
     // Creates a child organism with the genetics of *this and partner organism.
     Organism reproduce(const Organism& partner) const;
@@ -103,9 +103,6 @@ struct Organism {
     // of differing input / outputs, which using globals for num_input/output vars prevented.
     int m_numInputVars;
     int m_numOutputVars;
-    
-    // Mutation probability between 0 to 1 for a given gene.
-    double m_chanceMutation;
     
     // The fitness of the organism, determined by average time before falling in simulation and
     // the average distance of zmp coordinates from the origin.

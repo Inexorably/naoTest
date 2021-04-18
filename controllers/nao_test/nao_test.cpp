@@ -817,8 +817,16 @@ int test(int argc, char **argv) {
     p.save(generationFilename);
     
     // Adjust the mutation rate based on the standard deviation of the fitness components to prevent stagnation.
+    // The mutation chance for each generation_i is of the form:
+    // chance_i = (num_inputs*num_outputs)^-1 * (stddev_0 / s_i)^c
+    // Where stddev_0 is a base approximation of the standard deviation for a completely new population
+    // and c is a constant.  
+    // Get the base mutation chance which is (num_inputs*num_outputs)^-1.
+    double baseMutation = 1.0/static_cast<double>(p.m_numInputVars * p.m_numOutputVars);
     double totalStdDev = sqrt(pow(getStdDev(timeComponents),2)+pow(getStdDev(zmpComponents),2)+pow(getStdDev(translationXComponent),2)+pow(getStdDev(comVelocityComponent),2));
-    std::cout << "totalStdDev: " << totalStdDev << std::endl;
+    std::cout << "Component standard deviation: " << totalStdDev << std::endl;
+    p.m_chanceMutation = baseMutation*pow(MUTATION_CHANCE_STD_DEV_BASE/totalStdDev,MUTATION_CHANCE_C);
+    std::cout << "Adjusting mutation chance to: " << p.m_chanceMutation << std::endl;
     
     // Save best performing half of population (POPULATION_SIZE/2).
     std::cout << "Pruning weakest half of population.\n";

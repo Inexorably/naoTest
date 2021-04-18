@@ -186,22 +186,20 @@ Organism::Organism(const int& i, const int& o) : m_numInputVars(i), m_numOutputV
     m_genetics.push_back(temp);
   }
   
-  m_chanceMutation = 1.0/static_cast<double>(m_numInputVars * m_numOutputVars);
-  
   m_totalStableTime = 0;
   m_numSimulations = 0;
   m_totalZMPDistance = 0;
   m_totalCOMVelocity = 0;
 }
 
-// Mutate the current organism.  Each expression has a chanceMutation chance of changing.
-void Organism::mutate() {
+// Mutate the current organism.  Each expression has a p chance of changing.
+void Organism::mutate(const double& p) {
   //Loop through the m_genetics and m_expressions and randomly change the expressions.
   // m_genetics is of size m_numOutputVars, and each Gene g.m_expressions is of size m_numInputVars.
   for (Gene& g : m_genetics) {
     for (Expression& e : g.m_expressions) {
       // Randomly replace one of the expressions with a new one.
-      if (trueWithProbability(m_chanceMutation)) {
+      if (trueWithProbability(p)) {
         e = Expression();
       }
     }
@@ -556,7 +554,7 @@ void Population::mutateOrganisms() {
     Organism copy = m_organisms[distI(mt)];
     
     // Mutate the copy organism.
-    copy.mutate();
+    copy.mutate(m_chanceMutation);
     
     // Push back the mutated copy.
     mutations.push_back(copy);
@@ -588,6 +586,9 @@ void Population::save(const std::string& filename) const {
   outfile << "\t\t" << std::to_string(m_numInputVars) << '\n';
   outfile << FILE_BLOCK_NUM_OUTPUT_VARS;
   outfile << "\t\t" << std::to_string(m_numOutputVars) << '\n';
+  outfile << FILE_BLOCK_CHANCE_MUTATION;
+  outfile << "\t\t" << std::to_string(m_chanceMutation) << '\n';
+  
   
   // Output each organism to the file.
   for (unsigned int i = 0; i < m_organisms.size(); i++) {
@@ -702,6 +703,16 @@ void Population::load(const std::string& filename, const bool& ignoreHistory) {
   std::getline(infile, line);        // 6
   std::getline(infile, line);        // <m_numOutputVars>
   std::getline(infile, line);        // 10
+  
+  // Get the mutation chance.
+  std::getline(infile, line);        // <m_chanceMutation>
+  std::getline(infile, line);        // 1
+  // Clean and set the m_generation value if we are not ignoring history.
+  line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+  line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+  if (!ignoreHistory) {
+    m_chanceMutation = std::stod(line);
+  }
   
   // organismTicker is the index of the current organism we are working on.  When we
   // encounter a <organism> line, we increment this ticker.  Thus, we start at -1 as

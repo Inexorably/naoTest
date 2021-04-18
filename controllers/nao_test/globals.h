@@ -52,10 +52,19 @@ const double GAITGENE_CONST_MAX = 2.5;
 const double FITNESS_WEIGHT_ZMP_TRANSITION_TIME = 30;
 const double FITNESS_WEIGHT_ZMP_TRANSITION_COEF = 0;
 
+// Weighting values for Organism::getFitness().
 const double FITNESS_WEIGHT_ZMP_COEF = 0;
 const double FITNESS_WEIGHT_TRANSLATION_X_COEF = 3;
 const double FITNESS_WEIGHT_TIME_COEF = 0.2;
 const double FITNESS_WEIGHT_COMV_COEF = 90;
+
+// The mutation chance for each generation_i is of the form:
+// chance_i = (num_inputs*num_outputs)^-1 * (stddev_0 / s_i)^c
+// Where stddev_0 is a base approximation of the standard deviation for a completely new population
+// and c is a constant.  
+const double MUTATION_CHANCE_STD_DEV_BASE = 0.785;
+const int MUTATION_CHANCE_C = 3;
+
 
 /////////////////////////////////////// File constants ///////////////////////////////////////////////
 
@@ -69,6 +78,7 @@ const std::string FILE_BLOCK_GENERATION = "\t<generation>\n";
 const std::string FILE_BLOCK_POPULATION_SIZE = "\t<m_numOrganisms>\n";
 const std::string FILE_BLOCK_NUM_INPUT_VARS = "\t<m_numInputVars>\n";
 const std::string FILE_BLOCK_NUM_OUTPUT_VARS = "\t<m_numOutputVars>\n";
+const std::string FILE_BLOCK_CHANCE_MUTATION = "\t<m_chanceMutation>\n";
 const std::string FILE_BLOCK_ORGANISM = "<organism>\n";
 const std::string FILE_BLOCK_GAIT_ORGANISM = "<GaitOrganism>\n";
 const std::string FILE_BLOCK_INDEX = "\t<index>\n";
