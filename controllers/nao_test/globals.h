@@ -56,14 +56,14 @@ const double FITNESS_WEIGHT_ZMP_TRANSITION_COEF = 0;
 const double FITNESS_WEIGHT_ZMP_COEF = 0;
 const double FITNESS_WEIGHT_TRANSLATION_X_COEF = 3;
 const double FITNESS_WEIGHT_TIME_COEF = 0.2;
-const double FITNESS_WEIGHT_COMV_COEF = 90;
+const double FITNESS_WEIGHT_COMV_COEF = 150;
 
 // The mutation chance for each generation_i is of the form:
 // chance_i = (num_inputs*num_outputs)^-1 * (stddev_0 / s_i)^c
 // Where stddev_0 is a base approximation of the standard deviation for a completely new population
 // and c is a constant.  
 const double MUTATION_CHANCE_STD_DEV_BASE = 0.785;
-const int MUTATION_CHANCE_C = 3;
+const int MUTATION_CHANCE_C = 1;
 
 
 /////////////////////////////////////// File constants ///////////////////////////////////////////////

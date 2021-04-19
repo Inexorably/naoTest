@@ -669,19 +669,39 @@ int test(int argc, char **argv) {
         com_prev.push_back(com_0[i]);
       }
       
+      // Move into the initial position.
+      double delay = 1.2;      
+      while (robot->step(timeStep) != -1 && robot->getTime() < delay) {
+        LHipYawPitch->setPosition(0);
+        LHipRoll->setPosition(0);
+        LHipPitch->setPosition(-0.7332);
+        LKneePitch->setPosition(1.4664);
+        LAnklePitch->setPosition(-0.7332);
+        LAnkleRoll->setPosition(0);
+        RHipYawPitch->setPosition(0);
+        RHipRoll->setPosition(0);
+        RHipPitch->setPosition(-0.7332);
+        RKneePitch->setPosition(1.4664);
+        RAnklePitch->setPosition(-0.7332);
+        RAnkleRoll->setPosition(0);                
+      }
+      
       // Play the motion.
       forwardsTest.play();
+      
+      // Strangely, neither simulationReset does nor simulationResetPhysics work in setting
+      // resetting the velocities and accelerations of the robot.  Thus, we bring give time to slow NAO
+      // to prevent one organism from messing up the next.
+      double postDelay = 1;
     
       // Simulate robot.  If robot is still stable at the end of the motion file, break.
-      while (robot->step(timeStep) != -1 && robot->getTime() < forwardsTest.getDuration()/1000+1) {
-        // Provide some inital time to allow the robot to crouch.
-        if (robot->getTime() < 0.6) {
-          continue;
-        }
-      
+      while (robot->step(timeStep) != -1 && robot->getTime() < forwardsTest.getDuration()/1000+delay+postDelay) {
+        // Strangely, neither simulationReset does nor simulationResetPhysics work in setting
+        // resetting the velocities and accelerations of the robot.  Thus, we bring give time to slow NAO
+        // to prevent one organism from messing up the next.
         if (forwardsTest.isOver()) {
           //std::cout << "Motion playback finished at " << robot->getTime() << " s.\n";
-          break;
+          continue;
         }
       
         // Don't attempt to control every step.  Waiting more steps can reduce noise.
@@ -761,7 +781,7 @@ int test(int argc, char **argv) {
       }
       
       // Get the time the robot was stable.
-      double stableTime = robot->getTime() - t0;
+      double stableTime = robot->getTime() - t0 - delay - postDelay;
       
       // Get the total distance in x travelled.
       const double* trans = trans_field->getSFVec3f();
@@ -796,10 +816,12 @@ int test(int argc, char **argv) {
         o.save(bestOrganismFilename);
       }
       
-      // Reset simulation.
+      // Reset simulation.  There seems to be a bug where inertia is not reset, so we have to reset
+      // twice to counter this (?).
       robot->simulationReset();
       robot->step(timeStep);
       robot->simulationReset();
+      //robot->simulationResetPhysics();
     }
     
     // Each organism in this generation of the population has been simulated now.

@@ -7,7 +7,7 @@ maximizedDockId: -1
 centralWidgetVisible: 1
 renderingMode: PLAIN
 orthographicViewHeight: 1
-textFiles: 0 "controllers/nao_test/nao_test.cpp" "controllers/nao_test/motions.h" "controllers/nao_test/motions.cpp" "controllers/nao_test/utilities.h" "controllers/nao_test/utilities.cpp" "controllers/nao_test/globals.h" "controllers/nao_test/genetics.h" "controllers/nao_test/genetics.cpp"
+textFiles: 5 "controllers/nao_test/nao_test.cpp" "controllers/nao_test/motions.h" "controllers/nao_test/motions.cpp" "controllers/nao_test/utilities.h" "controllers/nao_test/utilities.cpp" "controllers/nao_test/globals.h" "controllers/nao_test/genetics.h" "controllers/nao_test/genetics.cpp"
 consoles: Console:All:All
 renderingDevicePerspectives: NAO:CameraBottom;0;0.266667;0;0
 renderingDevicePerspectives: NAO:CameraTop;1;0.266667;0;0
