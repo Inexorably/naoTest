@@ -178,5 +178,8 @@ double getStdDev(const std::vector<double>& v) {
   double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
   double stdev = std::sqrt(sq_sum / v.size());
 
+  if (std::isnan(stdev)) {
+    stdev = 0;
+  }
   return stdev;
 }

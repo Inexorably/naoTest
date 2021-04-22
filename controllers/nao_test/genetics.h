@@ -129,6 +129,12 @@ struct Organism {
     // Total translated distance in x.
     double m_totalTranslationX;
     
+    // The last fitness score the organism got.  This is an option for when doing the 
+    // same simulation each generation (ie simulation has no random elements).
+    // This is initialized to -1.  In the top level nao_test functions, if this is
+    // not -1 it can be checked and used to skip and save computation time (50%).
+    double m_lastFitnessScore;
+    
     // The total 'velocity' of the COM.
     // At each control step, the current COM velocity * control time step is added to this
     // variable.  The units are m/s * s.  Ie, m_totalCOMVelocity/m_totalStableTime gives the

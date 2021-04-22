@@ -15,6 +15,9 @@ const int NUM_GENERATIONS = 1000;
 // The number of steps between each control attempt.  Higher values allow less noise but slower response.
 const int STEPS_PER_CONTROL = 4;
 
+// Some very low value to act as a min bound for the fitness score, that will never actually be reached.
+const int FITNESS_FLOOR = -9999999;
+
 /////////////////////////////////////// NAO physical properties //////////////////////////////////////////
 
 const double FOOT_WIDTH = 0.08;  // Per http://simspark.sourceforge.net/wiki/index.php/Models.
@@ -30,7 +33,7 @@ const double LAMBDA = 0.02;
 
 // Determines the max number of instances of a type of function on a input variable an expression can have.
 // See Expression class in "genetics.h".
-const int EXPRESSION_MAX_SUBLENGTHS = 1;
+const int EXPRESSION_MAX_SUBLENGTHS = 2;
 
 // Expression constant min / max values for non exponential values.
 const double EXPRESSION_CONST_MIN = -2;
@@ -53,17 +56,17 @@ const double FITNESS_WEIGHT_ZMP_TRANSITION_TIME = 30;
 const double FITNESS_WEIGHT_ZMP_TRANSITION_COEF = 0;
 
 // Weighting values for Organism::getFitness().
-const double FITNESS_WEIGHT_ZMP_COEF = 0;
+const double FITNESS_WEIGHT_ZMP_COEF = 200;
 const double FITNESS_WEIGHT_TRANSLATION_X_COEF = 3;
 const double FITNESS_WEIGHT_TIME_COEF = 0.2;
-const double FITNESS_WEIGHT_COMV_COEF = 150;
+const double FITNESS_WEIGHT_COMV_COEF = 1300;
 
 // The mutation chance for each generation_i is of the form:
 // chance_i = (num_inputs*num_outputs)^-1 * (stddev_0 / s_i)^c
 // Where stddev_0 is a base approximation of the standard deviation for a completely new population
 // and c is a constant.  
 const double MUTATION_CHANCE_STD_DEV_BASE = 0.785;
-const int MUTATION_CHANCE_C = 1;
+const int MUTATION_CHANCE_C = 2;
 
 
 /////////////////////////////////////// File constants ///////////////////////////////////////////////

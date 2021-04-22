@@ -190,6 +190,7 @@ Organism::Organism(const int& i, const int& o) : m_numInputVars(i), m_numOutputV
   m_numSimulations = 0;
   m_totalZMPDistance = 0;
   m_totalCOMVelocity = 0;
+  m_lastFitnessScore = -1;
 }
 
 // Mutate the current organism.  Each expression has a p chance of changing.
@@ -240,7 +241,7 @@ Organism Organism::reproduce(const Organism& partner) const {
 double Organism::getFitness() const {
   // Returns -1 if num_simulations == 0.
   if (m_numSimulations == 0) { // More representative of concept than implictly casting as bool.
-    return -1;
+    return FITNESS_FLOOR;
   }
   
   // We base the fitness score on the following components.
@@ -449,7 +450,7 @@ GaitOrganism GaitOrganism::reproduce(const GaitOrganism& partner) const {
 double GaitOrganism::getFitness() const {
   // Returns -1 if num_simulations == 0.
   if (m_numSimulations == 0) { // More representative of concept than implictly casting as bool.
-    return -1;
+    return FITNESS_FLOOR;
   }
 
   return m_totalTranslationX/m_numSimulations;
