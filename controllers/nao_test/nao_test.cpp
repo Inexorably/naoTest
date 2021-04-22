@@ -610,14 +610,14 @@ int test(int argc, char **argv) {
   //////////////////////////////////////////////////////////////////////////
 
   // Generate an organism population of controllers.
-  Population p(400, inputMotorsR.size(), outputMotorsR.size());
+  Population p(100, inputMotorsR.size(), outputMotorsR.size());
   
   // Load p from the default file.  If no such file exists or file is corrupted,
   // the random p created upon construction will not be changed.
   p.load(DEFAULT_POPULATION_FILENAME, false);
   
   // For debugging purposes, output the best current fitness score.
-  double bestFitnessScore = -1;
+  double bestFitnessScore = FITNESS_FLOOR;
   
   // We may not start at the first generation.
   int initialGeneration = p.m_generation;
@@ -650,151 +650,175 @@ int test(int argc, char **argv) {
         std::cout << "Current generation (" << p.m_generation << ") progress: " << progressTickerB*10 << "%\n";
       }
       
-      // Get the start time of each organism's simulation.
-      double t0 = robot->getTime();
-      
-      // The last time we swapped the gait cycle.
-      double tg = 0;
-      
-      // False means that right leg is support, true means left leg is support.
-      bool swingPhase = false;
-      
-      // We want to minimize the kinetic energy by minimizing COM movement, so we track the
-      // positions of the com in order to track the velocity.  We initialize it to the inital value.
-      const double* com_0 = robot_node->getCenterOfMass();
-      std::vector<double> com_prev;
-      
-      // Store the previous values in a vector, as the array pointed to is deallocated each time step.
-      for (int i = 0; i < 3; i++) {
-        com_prev.push_back(com_0[i]);
-      }
-      
-      // Move into the initial position.
-      double delay = 1.2;      
-      while (robot->step(timeStep) != -1 && robot->getTime() < delay) {
-        LHipYawPitch->setPosition(0);
-        LHipRoll->setPosition(0);
-        LHipPitch->setPosition(-0.7332);
-        LKneePitch->setPosition(1.4664);
-        LAnklePitch->setPosition(-0.7332);
-        LAnkleRoll->setPosition(0);
-        RHipYawPitch->setPosition(0);
-        RHipRoll->setPosition(0);
-        RHipPitch->setPosition(-0.7332);
-        RKneePitch->setPosition(1.4664);
-        RAnklePitch->setPosition(-0.7332);
-        RAnkleRoll->setPosition(0);                
-      }
-      
-      // Play the motion.
-      forwardsTest.play();
-      
-      // Strangely, neither simulationReset does nor simulationResetPhysics work in setting
-      // resetting the velocities and accelerations of the robot.  Thus, we bring give time to slow NAO
-      // to prevent one organism from messing up the next.
-      double postDelay = 1;
-    
-      // Simulate robot.  If robot is still stable at the end of the motion file, break.
-      while (robot->step(timeStep) != -1 && robot->getTime() < forwardsTest.getDuration()/1000+delay+postDelay) {
+      // We skip the simulation step if we have already calculated the organism's values.
+      if (o.m_numSimulations < 1 || true) {
+        // Get the start time of each organism's simulation.
+        double t0 = robot->getTime();
+        
+        // The last time we swapped the gait cycle.
+        double tg = 0;
+        
+        // False means that right leg is support, true means left leg is support.
+        bool swingPhase = false;
+        
+        // We want to minimize the kinetic energy by minimizing COM movement, so we track the
+        // positions of the com in order to track the velocity.  We initialize it to the inital value.
+        const double* com_0 = robot_node->getCenterOfMass();
+        std::vector<double> com_prev;
+        
+        // Store the previous values in a vector, as the array pointed to is deallocated each time step.
+        for (int i = 0; i < 3; i++) {
+          com_prev.push_back(com_0[i]);
+        }
+        
+        // Move into the initial position.
+        double delay = 1.2;      
+        while (robot->step(timeStep) != -1 && robot->getTime() < delay) {
+          LHipYawPitch->setPosition(0);
+          LHipRoll->setPosition(0);
+          LHipPitch->setPosition(-0.7332);
+          LKneePitch->setPosition(1.4664);
+          LAnklePitch->setPosition(-0.7332);
+          LAnkleRoll->setPosition(0);
+          RHipYawPitch->setPosition(0);
+          RHipRoll->setPosition(0);
+          RHipPitch->setPosition(-0.7332);
+          RKneePitch->setPosition(1.4664);
+          RAnklePitch->setPosition(-0.7332);
+          RAnkleRoll->setPosition(0);                
+        }
+        
+        // Play the motion.
+        forwardsTest.play();
+        
+        // Set to true if robot fell and broke loop early.
+        bool fell = false;
+        
         // Strangely, neither simulationReset does nor simulationResetPhysics work in setting
         // resetting the velocities and accelerations of the robot.  Thus, we bring give time to slow NAO
         // to prevent one organism from messing up the next.
-        if (forwardsTest.isOver()) {
-          //std::cout << "Motion playback finished at " << robot->getTime() << " s.\n";
-          continue;
-        }
+        double postDelay = 1;
       
-        // Don't attempt to control every step.  Waiting more steps can reduce noise.
-        static int ticker = 0;
-        ticker++;
-        if (ticker > STEPS_PER_CONTROL) {
-          // Get the center of mass.
-          const double* com = robot_node->getCenterOfMass();
-          
-          // Find the magnitude of the velocity vector of the COM.
-          double comV = sqrt(pow(com[0]-com_prev[0],2)+pow(com[1]-com_prev[1],2)+pow(com[2]-com_prev[2],2));
-          
-          // Add the velocity magnitude to the organism's member variable.
-          o.m_totalCOMVelocity += comV / (timeStep * STEPS_PER_CONTROL);
-          
-          // Set the current COM to be the previous COM.
-          for (int i = 0; i < 3; i++) {
-            com_prev.push_back(com[i]);
+        // Simulate robot.  If robot is still stable at the end of the motion file, break.
+        while (robot->step(timeStep) != -1 && robot->getTime() < forwardsTest.getDuration()/1000.0+delay+postDelay) {
+          // Strangely, neither simulationReset does nor simulationResetPhysics work in setting
+          // resetting the velocities and accelerations of the robot.  Thus, we bring give time to slow NAO
+          // to prevent one organism from messing up the next.
+          if (forwardsTest.isOver()) {
+            //std::cout << "Motion playback finished at " << robot->getTime() << " s.\n";
+            continue;
           }
         
-          // Get the inputs (zmpx, zmpy, respective motor target position).
-          auto zmps = getZMPCoordinates(fsrL, fsrR);
-          double zmplx = zmps[0].m_x;
-          double zmply = zmps[0].m_y;
-          double zmprx = zmps[1].m_x;
-          double zmpry = zmps[1].m_y;
-          
-          // Add to the organism's m_totalZMPDistance member so that we can reward
-          // keeping the zmp x y closer to zero state.
-          // We weight by how much time has been spent at this zmp coordinate.
-          // Add the dominant foot zmps.
-          if (zmps[0].m_isSupporting) {
-            o.m_totalZMPDistance += sqrt(pow(zmplx, 2)+pow(zmply, 2))/(STEPS_PER_CONTROL*timeStep);          
-          }
-          else {
-            o.m_totalZMPDistance += sqrt(pow(zmprx, 2)+pow(zmpry, 2))/(STEPS_PER_CONTROL*timeStep);          
-          }
-          
-          // Put the control inputs into a vector to pass to the control function.
-          std::vector<double> xR;
-          std::vector<double> xL;
-          
-          // Loop through the control / input motors and put their target positions into the x vector.
-          for (auto m : inputMotorsR) {
-            xR.push_back(m->getTargetPosition());
-          }
-          for (auto m : inputMotorsL) {
-            xL.push_back(m->getTargetPosition());
-          }
+          // Don't attempt to control every step.  Waiting more steps can reduce noise.
+          static int ticker = 0;
+          ticker++;
+          if (ticker > STEPS_PER_CONTROL) {
+            // Get the center of mass.
+            const double* com = robot_node->getCenterOfMass();
             
-          // Generate each output variable based on the input (ie, loop through the system of equations).
-          // Note that we need to multiply some inputs by negative to correctly mirror the motions.
-          // The ShoulderRoll, ElbowYaw, and ElbowRoll should be multiplied by -1.  The ShoulderPitch should not.
-          std::vector<double> mirror = {1, -1, -1, -1};
-          for (int j = 0; j < p.m_numOutputVars; j++) {
-            // Find the respective motor input position and clamp it to the min:max bounds of that motor.
-            double inputR = o.m_genetics[j].calculateValue(xL);
-            double inputL = mirror[j]*o.m_genetics[j].calculateValue(xR);
+            // Find the magnitude of the velocity vector of the COM.
+            double comV = sqrt(0*pow(com[0]-com_prev[0],2)+pow(com[1]-com_prev[1],2)+pow(com[2]-com_prev[2],2));
             
-            // Handle NaN results.  If is NaN, set to zero.  Else, don't modify.            
-            inputR = std::isnan(inputR) ? 0 : inputR;
-            inputL = std::isnan(inputL) ? 0 : inputL;
+            // Add the velocity magnitude to the organism's member variable.
+            o.m_totalCOMVelocity += comV / (timeStep * STEPS_PER_CONTROL);
             
-            inputR = clamp(inputR, outputMotorsR[j]->getMinPosition(), outputMotorsR[j]->getMaxPosition());   
-            inputL = clamp(inputL, outputMotorsL[j]->getMinPosition(), outputMotorsL[j]->getMaxPosition());   
-            outputMotorsR[j]->setPosition(inputR);
-            outputMotorsL[j]->setPosition(inputL);
-          }
+            // Set the current COM to be the previous COM.
+            for (int i = 0; i < 3; i++) {
+              com_prev.push_back(com[i]);
+            }
           
-          ticker = 0;
+            // Get the inputs (zmpx, zmpy, respective motor target position).
+            auto zmps = getZMPCoordinates(fsrL, fsrR);
+            double zmplx = zmps[0].m_x;
+            double zmply = zmps[0].m_y;
+            double zmprx = zmps[1].m_x;
+            double zmpry = zmps[1].m_y;
+            
+            // Add to the organism's m_totalZMPDistance member so that we can reward
+            // keeping the zmp x y closer to zero state.
+            // We weight by how much time has been spent at this zmp coordinate.
+            // Add the dominant foot zmps.
+            if (zmps[0].m_isSupporting) {
+              o.m_totalZMPDistance += sqrt(pow(zmplx, 2)+pow(zmply, 2))/(STEPS_PER_CONTROL*timeStep);          
+            }
+            else {
+              o.m_totalZMPDistance += sqrt(pow(zmprx, 2)+pow(zmpry, 2))/(STEPS_PER_CONTROL*timeStep);          
+            }
+            
+            // Put the control inputs into a vector to pass to the control function.
+            std::vector<double> xR;
+            std::vector<double> xL;
+            
+            // Loop through the control / input motors and put their target positions into the x vector.
+            for (auto m : inputMotorsR) {
+              xR.push_back(m->getTargetPosition());
+            }
+            for (auto m : inputMotorsL) {
+              xL.push_back(m->getTargetPosition());
+            }
+              
+            // Generate each output variable based on the input (ie, loop through the system of equations).
+            // Note that we need to multiply some inputs by negative to correctly mirror the motions.
+            // The ShoulderRoll, ElbowYaw, and ElbowRoll should be multiplied by -1.  The ShoulderPitch should not.
+            std::vector<double> mirror = {1, -1, -1, -1};
+            for (int j = 0; j < p.m_numOutputVars; j++) {
+              // Find the respective motor input position and clamp it to the min:max bounds of that motor.
+              double inputR = o.m_genetics[j].calculateValue(xL);
+              double inputL = mirror[j]*o.m_genetics[j].calculateValue(xR);
+              
+              // Handle NaN results.  If is NaN, set to zero.  Else, don't modify.            
+              inputR = std::isnan(inputR) ? 0 : inputR;
+              inputL = std::isnan(inputL) ? 0 : inputL;
+              
+              inputR = clamp(inputR, outputMotorsR[j]->getMinPosition(), outputMotorsR[j]->getMaxPosition());   
+              inputL = clamp(inputL, outputMotorsL[j]->getMinPosition(), outputMotorsL[j]->getMaxPosition());   
+              outputMotorsR[j]->setPosition(inputR);
+              outputMotorsL[j]->setPosition(inputL);
+            }
+            
+            ticker = 0;
+          }
+        
+          // If the robot falls, break.
+          if (!isStable(fsrL, fsrR)) {
+            fell = true;
+            break;
+          }
         }
+        
+        // If we did not travel at least 0.5m in x and stay stable the whole way, we don't reward the organism
+        // by increasing its characteristics.
+        // Get the total distance in x travelled.
+        const double* trans = trans_field->getSFVec3f();
+        if (!fell && trans[0] > 0.5) {
+          // Get the time the robot was stable.
+          //double stableTime = robot->getTime() - t0 - delay - postDelay;
+          o.m_totalStableTime += forwardsTest.getDuration()/1000.0; //stableTime;
+          o.m_totalTranslationX += 0.5;    // We limit benefit to 0.5 m as we want to mainly reward reducing comv.
+        }
+        
+        // Increment runs counter.
+        ++o.m_numSimulations;
       
-        // If the robot falls, break.
-        if (!isStable(fsrL, fsrR)) {
-          break;
+        // Get the fitness score of this Organism.  This needs to be done after updating
+        // m_totalStableTime and m_numSimulations.
+        double fitnessScore = o.getFitness();
+        
+        // If this is a new best fitness scoring organism, we save it and print to console.
+        if (fitnessScore > bestFitnessScore) {
+          bestFitnessScore = fitnessScore;
+          std::cout << "-------------------------------\n";
+          std::cout << "New best fitness score: " << bestFitnessScore << std::endl;
+          std::string bestOrganismFilename = "pops/star.organism";
+          std::cout << "Saving best organism to: " << bestOrganismFilename << "\n";
+          o.printFitnessComponents();
+          std::cout << "-------------------------------\n";
+          o.save(bestOrganismFilename);
         }
       }
       
-      // Get the time the robot was stable.
-      double stableTime = robot->getTime() - t0 - delay - postDelay;
-      
-      // Get the total distance in x travelled.
-      const double* trans = trans_field->getSFVec3f();
-      o.m_totalTranslationX += trans[0];
-      
-      // Increment the runs counter and stable time tracker variables.
-      o.m_totalStableTime += stableTime;
-      ++o.m_numSimulations;
-      
-      // Get the fitness score of this Organism.  This needs to be done after updating
-      // m_totalStableTime and m_numSimulations.
-      double fitnessScore = o.getFitness();
-      
+      // Even if we skip the simulation run due to have already calcuating it, we still
+      // will check the stdev of the generation for adjusting the mutation chance.
       // Push back the individual organism weighted components for each property onto their
       // respective vectors so that we can find the population std dev for each generation
       // to adjust the mutation rate going forward.
@@ -803,18 +827,6 @@ int test(int argc, char **argv) {
       zmpComponents.push_back(components[1]);
       translationXComponent.push_back(components[2]);
       comVelocityComponent.push_back(components[3]);
-      
-      // If this is a new best fitness scoring organism, we save it and print to console.
-      if (fitnessScore > bestFitnessScore) {
-        bestFitnessScore = fitnessScore;
-        std::cout << "-------------------------------\n";
-        std::cout << "New best fitness score: " << bestFitnessScore << std::endl;
-        std::string bestOrganismFilename = "pops/star.organism";
-        std::cout << "Saving best organism to: " << bestOrganismFilename << "\n";
-        o.printFitnessComponents();
-        std::cout << "-------------------------------\n";
-        o.save(bestOrganismFilename);
-      }
       
       // Reset simulation.  There seems to be a bug where inertia is not reset, so we have to reset
       // twice to counter this (?).
