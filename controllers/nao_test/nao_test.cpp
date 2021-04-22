@@ -651,7 +651,7 @@ int test(int argc, char **argv) {
       }
       
       // We skip the simulation step if we have already calculated the organism's values.
-      if (o.m_numSimulations < 1 || true) {
+      if (o.m_numSimulations < 1) {
         // Get the start time of each organism's simulation.
         double t0 = robot->getTime();
         
