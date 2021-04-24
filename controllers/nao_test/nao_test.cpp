@@ -901,9 +901,18 @@ int test(int argc, char **argv) {
 // Writes historic data in csv format to filename for plotting in an external program.
 // Assumes files are in pops/generation_X.pop, where X varies from 0 to n.
 // Column 1: Generation number
-// Column 2: Min stable time
-// Column 3: Mean stable time
-// Column 4: Max stable time
+// Column 2: Mean stable time
+// Column 3: Max stable time
+// Column 4: Mean zmp distance
+// Column 5: Min zmp distance
+// Column 6: Mean trans x distance
+// Column 7: Max trans x distance
+// Column 8: Mean COM velocity
+// Column 9: Min COM velocity
+// Column 10: Generation stddev
+// Column 11: Mutation chance
+// Column 12: Fitness score mean
+// Column 13: Fitness score max
 // TODO: Make not require known population size n, input vars i, and output vars o.
 void writePopulationInfo(const std::string& outfilename, const int& n, const int& i, const int&o) {
   std::cout << "Beginning historic data writing to: " << outfilename << std::endl;
@@ -933,28 +942,109 @@ void writePopulationInfo(const std::string& outfilename, const int& n, const int
     // Load the generation into p.
     p.load(generationFilename);
     
-    // Loop through p and calculate the values of interest.
-    double stableTimeMin = 0;
+    // For each generation, we store the fitness components so we can calculate the generational stddev.
+    std::vector<double> timeComponents;
+    std::vector<double> zmpComponents;
+    std::vector<double> translationXComponent;
+    std::vector<double> comVelocityComponent;
+    
+    // Loop through p and calculate the values of interest.  Initialize the min/max variable trackers to the first
+    // valid member of the generation's population's value.
     double stableTimeMean = 0;
-    double stableTimeMax = 0;
-    for (Organism o : p.m_organisms) {
-      double organismMeanStableTime = o.getFitness();
-      stableTimeMean += organismMeanStableTime;
-      if (organismMeanStableTime < stableTimeMin) {
-        stableTimeMin = organismMeanStableTime;
+    double stableTimeMax;
+    double zmpDistanceMean = 0;
+    double zmpDistanceMin;
+    double transXMean = 0;
+    double transXMax;
+    double comVMean = 0;
+    double comVMin;
+    double fitnessMean = 0;
+    double fitnessMax;
+    
+    // Find the first valid organism and break.  TODO: Can combine loops and increase efficiency slightly.
+    for (Organism o : p.m_organisms) {   
+      // Only record organisms with good runs, ie stable time > 5s and translation x > 0.5 m.
+      if (o.m_totalStableTime/static_cast<double>(o.m_numSimulations) < 5.0 || o.m_totalTranslationX/static_cast<double>(o.m_numSimulations) <  0.5) {
         continue;
       }
+      stableTimeMax = o.m_totalStableTime/static_cast<double>(o.m_numSimulations);
+      zmpDistanceMin = o.m_totalZMPDistance/static_cast<double>(o.m_numSimulations);
+      transXMax = o.m_totalTranslationX/static_cast<double>(o.m_numSimulations);
+      comVMin = o.m_totalCOMVelocity/static_cast<double>(o.m_numSimulations);
+      fitnessMax = o.getFitness();
+      break;
+    }
+    
+    // Record the number of non-skipped organisms in each generation so that we can divide the totals/n to get mean.
+    int numOrganismsRecorded = 0;
+    
+    for (Organism o : p.m_organisms) {   
+      // Only record organisms with good runs, ie stable time > 5s and translation x > 0.5 m.
+      if (o.m_totalStableTime/static_cast<double>(o.m_numSimulations) < 5.0 || o.m_totalTranslationX/static_cast<double>(o.m_numSimulations) <  0.5) {
+        continue;
+      }
+      
+      // Increment the recorded organisms ticker.
+      numOrganismsRecorded++;
+     
+      // Add the mean organism values to the respective objects.  We will divide by the number of organisms
+      // before writing to the csv.
+      double organismMeanStableTime = o.m_totalStableTime/static_cast<double>(o.m_numSimulations);
+      stableTimeMean += organismMeanStableTime;
+      double organismZMPDistanceMean = o.m_totalZMPDistance/static_cast<double>(o.m_numSimulations);
+      zmpDistanceMean += organismZMPDistanceMean;
+      double organismTransXMean = o.m_totalTranslationX/static_cast<double>(o.m_numSimulations);
+      transXMean += organismTransXMean;
+      double organismCOMVMean = o.m_totalCOMVelocity/static_cast<double>(o.m_numSimulations);
+      comVMean += organismCOMVMean;
+      double organismFitness = o.getFitness();
+      fitnessMean += organismFitness;
+      
+      // Check if the organism values presented thus far are the greatest magnitude so far.
+      // If so, update the max value for each characteristic for the current generation.
       if (organismMeanStableTime > stableTimeMax) {
         stableTimeMax = organismMeanStableTime;
-        continue;
       }
+      if (organismZMPDistanceMean < zmpDistanceMin) {
+        zmpDistanceMin = organismZMPDistanceMean;
+      }
+      if (organismTransXMean > transXMax) {
+        transXMax = organismTransXMean;
+      }
+      if (organismCOMVMean < comVMin) {
+        comVMin = organismCOMVMean;
+      }
+      if (organismFitness > fitnessMax) {
+        fitnessMax = organismFitness;
+      }
+      
+      // Get the fitness components needed for the generation stddev calculations.
+      std::vector<double> components = o.getFitnessComponents();
+      timeComponents.push_back(components[0]);
+      zmpComponents.push_back(components[1]);
+      translationXComponent.push_back(components[2]);
+      comVelocityComponent.push_back(components[3]);
     }
-    // stableTimeMean is currently the sum of the mean stable times of the organisms in that generation.
-    // Divide by the number of organisms to get mean.
-    stableTimeMean = stableTimeMean/p.m_organisms.size();
+    // The mean variables are currently the sum of the mean values of the organisms in this generation.
+    // Divide by the number of organisms to get mean for the generation.
+    stableTimeMean = stableTimeMean/static_cast<double>(numOrganismsRecorded);
+    zmpDistanceMean = zmpDistanceMean/static_cast<double>(numOrganismsRecorded);
+    transXMean = transXMean/static_cast<double>(numOrganismsRecorded);
+    comVMean = comVMean/static_cast<double>(numOrganismsRecorded);
+    fitnessMean = fitnessMean/static_cast<double>(numOrganismsRecorded);
     
-    // Write our values to our output file.
-    outfile << i << "," << stableTimeMin << "," << stableTimeMean << "," << stableTimeMax << '\n';
+    // Get the generational stddev.
+    double totalStdDev = sqrt(pow(getStdDev(timeComponents),2)+pow(getStdDev(zmpComponents),2)+pow(getStdDev(translationXComponent),2)+pow(getStdDev(comVelocityComponent),2));
+    
+    // Write our values for the generation to our output file.
+    outfile << i;
+    outfile << "," << stableTimeMean << "," << stableTimeMax;
+    outfile << "," << zmpDistanceMean << "," << zmpDistanceMin;
+    outfile << "," << transXMean << "," << transXMax;
+    outfile << "," << comVMean << "," << comVMin;
+    outfile << "," << totalStdDev << "," << p.m_chanceMutation;
+    outfile << "," << fitnessMean << "," << fitnessMax;
+    outfile << '\n';
   }
 
   // We have read all the successive generation files.
@@ -963,14 +1053,14 @@ void writePopulationInfo(const std::string& outfilename, const int& n, const int
 }
 
 int main(int argc, char **argv) {    
-  // Testing gait controller evolution.
-  test(argc, argv);
+  // Testing controller evolution.
+  //test(argc, argv);
 
-  // Evolve the controllers.  
+  // Evolve the controllers (single leg stability).
   //runEvolutions(argc, argv);
   
   // Print generation data to output csv file.
-  //writePopulationInfo("pops/historicalData.csv");
+  writePopulationInfo("pops/historicalData.csv", 100, 6, 4);
   
   return 3;
 }
