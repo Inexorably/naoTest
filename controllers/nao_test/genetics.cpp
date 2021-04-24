@@ -190,7 +190,6 @@ Organism::Organism(const int& i, const int& o) : m_numInputVars(i), m_numOutputV
   m_numSimulations = 0;
   m_totalZMPDistance = 0;
   m_totalCOMVelocity = 0;
-  m_lastFitnessScore = -1;
 }
 
 // Mutate the current organism.  Each expression has a p chance of changing.
