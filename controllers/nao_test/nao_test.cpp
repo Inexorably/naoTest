@@ -617,7 +617,17 @@ int test(int argc, char **argv) {
   p.load(DEFAULT_POPULATION_FILENAME, false);
   
   // For debugging purposes, output the best current fitness score.
+  // Set bestFitnessScore to the best fitness score in the current population.
+  // Iterate through the organisms of the population and set the fitness score.
+  // If none of the organisms have been simulated (ie all return the default fitness score),
+  // bestFitnessScore will be set to FITNESS_FLOOR.
   double bestFitnessScore = FITNESS_FLOOR;
+  for (auto o : p.m_organisms) {
+    if (o.getFitness() > bestFitnessScore) {
+      bestFitnessScore = o.getFitness();
+    }
+  }
+  std::cout << "Initial bestFitnessScore for star organism set to: " << bestFitnessScore << std::endl;
   
   // We may not start at the first generation.
   int initialGeneration = p.m_generation;

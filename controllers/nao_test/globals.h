@@ -10,7 +10,7 @@ const double FOOT_FORCE_MIN = 30;
 const int SIMULATION_TIME_MAX = 60;
 
 // The number of generations of our population we iterate through.
-const int NUM_GENERATIONS = 1000;
+const int NUM_GENERATIONS = 2000;
 
 // The number of steps between each control attempt.  Higher values allow less noise but slower response.
 const int STEPS_PER_CONTROL = 4;
@@ -66,7 +66,7 @@ const double FITNESS_WEIGHT_COMV_COEF = 1300;
 // Where stddev_0 is a base approximation of the standard deviation for a completely new population
 // and c is a constant.  
 const double MUTATION_CHANCE_STD_DEV_BASE = 0.785;
-const int MUTATION_CHANCE_C = 2;
+const int MUTATION_CHANCE_C = 3;
 
 
 /////////////////////////////////////// File constants ///////////////////////////////////////////////
