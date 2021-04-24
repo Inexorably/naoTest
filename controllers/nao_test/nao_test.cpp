@@ -978,7 +978,16 @@ void writePopulationInfo(const std::string& outfilename, const int& n, const int
     // Record the number of non-skipped organisms in each generation so that we can divide the totals/n to get mean.
     int numOrganismsRecorded = 0;
     
-    for (Organism o : p.m_organisms) {   
+    for (Organism o : p.m_organisms) { 
+      // Get the fitness components needed for the generational stddev calculations.  The stdev data should
+      // include all organisms, not just successful ones, so we push the fitness components onto their respective
+      // vectors prior to checking if the organism is successful (and continuing to next iteration if it is not).
+      std::vector<double> components = o.getFitnessComponents();
+      timeComponents.push_back(components[0]);
+      zmpComponents.push_back(components[1]);
+      translationXComponent.push_back(components[2]);
+      comVelocityComponent.push_back(components[3]);
+      
       // Only record organisms with good runs, ie stable time > 5s and translation x > 0.5 m.
       if (o.m_totalStableTime/static_cast<double>(o.m_numSimulations) < 5.0 || o.m_totalTranslationX/static_cast<double>(o.m_numSimulations) <  0.5) {
         continue;
@@ -1017,13 +1026,6 @@ void writePopulationInfo(const std::string& outfilename, const int& n, const int
       if (organismFitness > fitnessMax) {
         fitnessMax = organismFitness;
       }
-      
-      // Get the fitness components needed for the generation stddev calculations.
-      std::vector<double> components = o.getFitnessComponents();
-      timeComponents.push_back(components[0]);
-      zmpComponents.push_back(components[1]);
-      translationXComponent.push_back(components[2]);
-      comVelocityComponent.push_back(components[3]);
     }
     // The mean variables are currently the sum of the mean values of the organisms in this generation.
     // Divide by the number of organisms to get mean for the generation.
