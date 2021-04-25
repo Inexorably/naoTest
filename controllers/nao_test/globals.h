@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 /////////////////////////////////////// Simulation constants /////////////////////////////////////////////
 
 // If the total grf / force feet supporting drops below FOOT_FORCE_MIN, the robot has fallen over
@@ -10,7 +12,7 @@ const double FOOT_FORCE_MIN = 30;
 const int SIMULATION_TIME_MAX = 60;
 
 // The number of generations of our population we iterate through.
-const int NUM_GENERATIONS = 2000;
+const int NUM_GENERATIONS = 10001;
 
 // The number of steps between each control attempt.  Higher values allow less noise but slower response.
 const int STEPS_PER_CONTROL = 4;
@@ -66,13 +68,14 @@ const double FITNESS_WEIGHT_COMV_COEF = 1300;
 // Where stddev_0 is a base approximation of the standard deviation for a completely new population
 // and c is a constant.  
 const double MUTATION_CHANCE_STD_DEV_BASE = 0.785;
-const int MUTATION_CHANCE_C = 3;
-
+extern int MUTATION_CHANCE_C;
 
 /////////////////////////////////////// File constants ///////////////////////////////////////////////
 
-// Default population filename.
-const std::string DEFAULT_POPULATION_FILENAME = "pops/population.pop";
+// Filename / paths for saving historical generation data.
+// Not explictly constant so can change in main and do various conditions.
+extern std::string DEFAULT_POPULATION_FILENAME;
+extern std::string DEFAULT_GENERATION_FILE_PREFIX;
 
 // XML-ish blocks for parsing files.
 const std::string FILE_BLOCK_POPULATION = "<population>\n";
