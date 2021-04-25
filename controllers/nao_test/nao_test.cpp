@@ -630,7 +630,7 @@ int test(int argc, char **argv) {
   std::cout << "Initial bestFitnessScore for star organism set to: " << bestFitnessScore << std::endl;
   
   // We may not start at the first generation.
-  int initialGeneration = p.m_generation;
+  int initialGeneration = 0;//p.m_generation;
   
   // Iterate through each generation and evolve.
   for (; p.m_generation - initialGeneration < NUM_GENERATIONS; p.m_generation++) {
@@ -857,7 +857,7 @@ int test(int argc, char **argv) {
     
     // Save this generation for possible plotting purposes.
     std::cout << "Saving to historic generation population file at pops/generation_" << p.m_generation << ".pop\n";
-    std::string generationFilename = "pops/generation_" + std::to_string(p.m_generation) + ".pop";
+    std::string generationFilename = DEFAULT_GENERATION_FILE_PREFIX + std::to_string(p.m_generation) + ".pop";
     p.save(generationFilename);
     
     // Adjust the mutation rate based on the standard deviation of the fitness components to prevent stagnation.
@@ -951,15 +951,15 @@ void writePopulationInfo(const std::string& outfilename, const int& n, const int
     // Loop through p and calculate the values of interest.  Initialize the min/max variable trackers to the first
     // valid member of the generation's population's value.
     double stableTimeMean = 0;
-    double stableTimeMax;
+    double stableTimeMax = -999999;
     double zmpDistanceMean = 0;
-    double zmpDistanceMin;
+    double zmpDistanceMin = 9999999;
     double transXMean = 0;
-    double transXMax;
+    double transXMax = -9999999;
     double comVMean = 0;
-    double comVMin;
+    double comVMin = 999999;
     double fitnessMean = 0;
-    double fitnessMax;
+    double fitnessMax = 999999;
     
     // Find the first valid organism and break.  TODO: Can combine loops and increase efficiency slightly.
     for (Organism o : p.m_organisms) {   
@@ -1055,14 +1055,27 @@ void writePopulationInfo(const std::string& outfilename, const int& n, const int
 }
 
 int main(int argc, char **argv) {    
-  // Testing controller evolution.
-  //test(argc, argv);
+  // Testing controller evolution for various mutation constants.
+  std::string DEFAULT_POPULATION_FILENAME = "pops/c0/population.pop";
+  std::string DEFAULT_GENERATION_FILE_PREFIX = "pops/c0/generation_";
+  int MUTATION_CHANCE_C = 0;
+  test(argc, argv);
+  
+  DEFAULT_POPULATION_FILENAME = "pops/c1/population.pop";
+  DEFAULT_GENERATION_FILE_PREFIX = "pops/c1/generation_";
+  MUTATION_CHANCE_C = 1;
+  test(argc, argv);
+  
+  DEFAULT_POPULATION_FILENAME = "pops/c3/population.pop";
+  DEFAULT_GENERATION_FILE_PREFIX = "pops/c3/generation_";
+  MUTATION_CHANCE_C = 3;
+  test(argc, argv);
 
   // Evolve the controllers (single leg stability).
   //runEvolutions(argc, argv);
   
   // Print generation data to output csv file.
-  writePopulationInfo("pops/historicalData.csv", 100, 6, 4);
+  //writePopulationInfo("pops/historicalData.csv", 100, 6, 4);
   
   return 3;
 }
