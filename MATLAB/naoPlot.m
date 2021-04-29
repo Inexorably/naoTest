@@ -8,6 +8,9 @@ historicalFilenames = {'C:\Users\Shawn\Documents\GitHub\naoTest\controllers\nao_
     'C:\Users\Shawn\Documents\GitHub\naoTest\controllers\nao_test\pops\c2\historicalData.csv' ...
     'C:\Users\Shawn\Documents\GitHub\naoTest\controllers\nao_test\pops\c3\historicalData.csv'};
 
+% How many generations to look at.
+N = 1000;
+
 for ii=0:length(historicalFilenames)-1
 
     % Housekeeping.
@@ -23,6 +26,9 @@ for ii=0:length(historicalFilenames)-1
 
     % Load the historical data from the csv file in the default location.
     M = table2array(readtable(historicalFilenames{ii+1}));
+    
+    % Check out the first N entries.
+    M = M(1:N,:);
 
     % Per code, columns are:
     %{ 
@@ -131,8 +137,11 @@ for ii=0:length(historicalFilenames)-1
         title('Generational Fitness')
         xlabel('Generations')
         ylabel('Fitness Score')
-        legend('mean', 'max') 
+        legend('mean', 'max', 'location', 'southeast') 
     end
+    
+    % Title the superplot.
+    sgtitle("Generational data: n = 100, c = "+num2str(ii))
     
     % Save the current figure.
     saveas(fig, "generational data n = 100, c = "+num2str(ii)+".fig")
@@ -217,7 +226,7 @@ grid on
 title('Generational max Fitness')
 xlabel('Generations')
 ylabel('Fitness Score')
-legend('c0', 'c1', 'c2', 'c3')
+legend('c0', 'c1', 'c2', 'c3', 'location', 'southeast')
 hold off
 
 % Title the overall figure of subplots (super title).
@@ -279,7 +288,7 @@ grid on
 title('Generational mean Fitness')
 xlabel('Generations')
 ylabel('Fitness Score')
-legend('c0', 'c1', 'c2', 'c3')
+legend('c0', 'c1', 'c2', 'c3', 'location', 'southeast')
 hold off
 
 % Title the overall figure of subplots (super title).
