@@ -616,26 +616,26 @@ int test(int argc, char **argv) {
   // the random p created upon construction will not be changed.
   p.load(DEFAULT_POPULATION_FILENAME, false);
   
-  // For debugging purposes, output the best current fitness score.
-  // Set bestFitnessScore to the best fitness score in the current population.
-  // Iterate through the organisms of the population and set the fitness score.
-  // If none of the organisms have been simulated (ie all return the default fitness score),
-  // bestFitnessScore will be set to FITNESS_FLOOR.
-  double bestFitnessScore = FITNESS_FLOOR;
-  for (auto o : p.m_organisms) {
-    if (o.getFitness() > bestFitnessScore) {
-      bestFitnessScore = o.getFitness();
-    }
-  }
-  std::cout << "Initial bestFitnessScore for star organism set to: " << bestFitnessScore << std::endl;
-  
   // We may not start at the first generation.
-  int initialGeneration = 0;//p.m_generation;
+  int initialGeneration = p.m_generation;
   
   // Iterate through each generation and evolve.
   for (; p.m_generation - initialGeneration < NUM_GENERATIONS; p.m_generation++) {
     std::cout << "Entering generation " << p.m_generation << std::endl;
     
+    // For debugging purposes, output the best current fitness score.
+    // Set bestFitnessScore to the best fitness score in the current population.
+    // Iterate through the organisms of the population and set the fitness score.
+    // If none of the organisms have been simulated (ie all return the default fitness score),
+    // bestFitnessScore will be set to FITNESS_FLOOR.
+    double bestFitnessScore = FITNESS_FLOOR;
+    for (auto o : p.m_organisms) {
+      if (o.getFitness() > bestFitnessScore) {
+        bestFitnessScore = o.getFitness();
+      }
+    }
+    std::cout << "Initial bestFitnessScore for star organism for current generation set to: " << bestFitnessScore << std::endl;
+      
     // Track the runtime of each generation to add to m_runtime of the population object.
     auto start = std::chrono::system_clock::now();
     
@@ -661,7 +661,7 @@ int test(int argc, char **argv) {
       }
       
       // We skip the simulation step if we have already calculated the organism's values.
-      if (o.m_numSimulations < 1) {
+      if (o.m_numSimulations < 1 || true) {
         // Get the start time of each organism's simulation.
         double t0 = robot->getTime();
         
@@ -923,11 +923,13 @@ void writePopulationInfo(const std::string& outfilename, const int& n, const int
   // Create the ofstream.
   std::ofstream outfile;
   outfile.open(outfilename);
+  
+  std::cout << "Checking generation files of form: " << DEFAULT_GENERATION_FILE_PREFIX << "i.pop" << std::endl;
 
   // Loop through the generations.
   for (int i = 0; true; i++) {
     // Create the generation filename we are checking.
-    std::string generationFilename = "pops/generation_" + std::to_string(i) + ".pop";    
+    std::string generationFilename = DEFAULT_GENERATION_FILE_PREFIX + std::to_string(i) + ".pop";    
   
     // Create the ifstream so we can check file existance.
     std::ifstream infile(generationFilename);
@@ -1054,28 +1056,456 @@ void writePopulationInfo(const std::string& outfilename, const int& n, const int
   return;
 }
 
-int main(int argc, char **argv) {    
-  // Testing controller evolution for various mutation constants.
-  std::string DEFAULT_POPULATION_FILENAME = "pops/c0/population.pop";
-  std::string DEFAULT_GENERATION_FILE_PREFIX = "pops/c0/generation_";
-  int MUTATION_CHANCE_C = 0;
-  test(argc, argv);
+// Only taking zmp data as inputs and using shoulderpitch, shoulderroll as outputs (treat elbow as rigid).
+int simpleTest(int argc, char **argv) {
+  //////////////////////////////////////////////////////////////////////////
   
+  // Initializing robot.
+  
+  // create the Robot instance.
+  Supervisor *robot = new Supervisor();
+
+  // get the time step of the current world.
+  int timeStep = (int)robot->getBasicTimeStep();
+  
+  // get handle to robot's translation field
+  Node *robot_node = robot->getFromDef("NAO");
+  if (robot_node == NULL) {
+    std::cerr << "No DEF NAO node found in the current world file" << std::endl;
+    exit(1);
+  }
+  Field *trans_field = robot_node->getField("translation");
+  Field *rot_field = robot_node->getField("rotation");
+  
+  // If the pops/ folder where population files are stored does not exist, create it.
+  CreateDirectory("pops", NULL);
+
+  //////////////////////////////////////////////////////////////////////////
+
+  // Get motors per NAO proto file.
+  
+  //Upper body.
+  Motor *HeadYaw = robot->getMotor("HeadYaw");
+  Motor *HeadPitch = robot->getMotor("HeadPitch");
+  Motor *RShoulderPitch = robot->getMotor("RShoulderPitch");
+  Motor *RShoulderRoll = robot->getMotor("RShoulderRoll");
+  Motor *RElbowYaw = robot->getMotor("RElbowYaw");
+  Motor *RElbowRoll = robot->getMotor("RElbowRoll");
+  Motor *LShoulderPitch = robot->getMotor("LShoulderPitch");
+  Motor *LShoulderRoll = robot->getMotor("LShoulderRoll");
+  Motor *LElbowYaw = robot->getMotor("LElbowYaw");
+  Motor *LElbowRoll = robot->getMotor("LElbowRoll");
+  
+  //Lower body.
+  Motor *RHipYawPitch = robot->getMotor("RHipYawPitch");
+  Motor *RHipRoll = robot->getMotor("RHipRoll");
+  Motor *RHipPitch = robot->getMotor("RHipPitch");
+  Motor *RKneePitch = robot->getMotor("RKneePitch");
+  Motor *RAnklePitch = robot->getMotor("RAnklePitch");
+  Motor *RAnkleRoll = robot->getMotor("RAnkleRoll");
+  Motor *LHipYawPitch = robot->getMotor("LHipYawPitch");
+  Motor *LHipRoll = robot->getMotor("LHipRoll");
+  Motor *LHipPitch = robot->getMotor("LHipPitch");
+  Motor *LKneePitch = robot->getMotor("LKneePitch");
+  Motor *LAnklePitch = robot->getMotor("LAnklePitch");
+  Motor *LAnkleRoll = robot->getMotor("LAnkleRoll");
+  
+  // Load motion files.
+  Motion hand_wave("../../motions/HandWave.motion");
+  Motion forwards("../../motions/Forwards50.motion");
+  Motion forwardsTest("../../motions/Forwards50_1.2x_v_p.motion");   // Modified walking motion with 2x speed and no hip / ankle roll
+  Motion backwards("../../motions/Backwards.motion");
+  Motion side_step_left("../../motions/SideStepLeft.motion");
+  Motion side_step_right("../../motions/SideStepRight.motion");
+  Motion turn_left_60("../../motions/TurnLeft60.motion");
+  Motion turn_right_60("../../motions/TurnRight60.motion");
+  
+  // For iterating through:
+  // The motors we use as inputs for the controller (in addition to the zmp coords).
+  // We get these with getTargetPosition().
+  // In order to force symmetry, we use mirrored input vectors where the order of L and R are swapped.
+  std::vector<Motor*> inputMotorsR = {RHipYawPitch,RHipRoll,RHipPitch,RKneePitch,RAnklePitch,RAnkleRoll};
+  std::vector<Motor*> inputMotorsL = {LHipYawPitch,LHipRoll,LHipPitch,LKneePitch,LAnklePitch,LAnkleRoll};
+  
+  // The motors we use as outputs that the controller provides target positions to.
+  // We use these with setPosition().
+  // In order to enforce symmetry, we split the output motors into the left and right side of the body.
+  // This means that for a given organism, we can call calculateValues and provide mirrored inputs
+  // and get mirrored outputs.  This should reduce the search space by 75% (n^2, and reducing n by half).
+  std::vector<Motor*> outputMotorsR = {RShoulderPitch, RShoulderRoll};
+  std::vector<Motor*> outputMotorsL = {LShoulderPitch, LShoulderRoll};
+
+  //Misc sensors
+  Camera *cameraTop = robot->getCamera("CameraTop");
+  Camera *cameraBottom = robot->getCamera("CameraBottom");
+  //cameraTop->enable(4 * timeStep);
+  //cameraBottom->enable(4 * timeStep);
+  TouchSensor *fsrL = robot->getTouchSensor("LFsr");
+  TouchSensor *fsrR = robot->getTouchSensor("RFsr");
+  fsrL->enable(timeStep);
+  fsrR->enable(timeStep);
+  
+  //////////////////////////////////////////////////////////////////////////
+
+  // Generate an organism population of controllers.
+  Population p(100, inputMotorsR.size(), outputMotorsR.size());
+  
+  // Load p from the default file.  If no such file exists or file is corrupted,
+  // the random p created upon construction will not be changed.
+  p.load(DEFAULT_POPULATION_FILENAME, false);
+  
+  // We may not start at the first generation.
+  int initialGeneration = 0;//p.m_generation;
+  
+  // Iterate through each generation and evolve.
+  for (; p.m_generation - initialGeneration < NUM_GENERATIONS; p.m_generation++) {
+    std::cout << "Entering generation " << p.m_generation << std::endl;
+    
+    // For debugging purposes, output the best current fitness score.
+    // Set bestFitnessScore to the best fitness score in the current population.
+    // Iterate through the organisms of the population and set the fitness score.
+    // If none of the organisms have been simulated (ie all return the default fitness score),
+    // bestFitnessScore will be set to FITNESS_FLOOR.
+    double bestFitnessScore = FITNESS_FLOOR;
+    for (auto o : p.m_organisms) {
+      if (o.getFitness() > bestFitnessScore) {
+        bestFitnessScore = o.getFitness();
+      }
+    }
+    std::cout << "Initial bestFitnessScore for star organism for current generation set to: " << bestFitnessScore << std::endl;
+    
+    // Track the runtime of each generation to add to m_runtime of the population object.
+    auto start = std::chrono::system_clock::now();
+    
+    // Track the organism properties of each generation, so that we can calculate the
+    // population standard deviations in order to increase the mutation rate when stagnation is
+    // detected.  Note that we use the fitness 'components' of each property, which have been weighted,
+    // as these are all of the same order of magnitude.
+    std::vector<double> timeComponents;
+    std::vector<double> zmpComponents;
+    std::vector<double> translationXComponent;
+    std::vector<double> comVelocityComponent;
+
+    // For each organism in the population, run the simulation in order to generate fitness values.
+    unsigned int progressTickerA = 0;   // For printing to console / debugging.
+    unsigned int progressTickerB = 0;
+    for (Organism& o : p.m_organisms) {
+      // Print progress to console every 10% of the current population.
+      progressTickerA++;
+      if (progressTickerA > p.m_numOrganisms/10) {
+        progressTickerB++;
+        progressTickerA = 0;
+        std::cout << "Current generation (" << p.m_generation << ") progress: " << progressTickerB*10 << "%\n";
+      }
+      
+      // We skip the simulation step if we have already calculated the organism's values.
+      if (o.m_numSimulations < 1 || true) {
+        // Get the start time of each organism's simulation.
+        double t0 = robot->getTime();
+        
+        // The last time we swapped the gait cycle.
+        double tg = 0;
+        
+        // False means that right leg is support, true means left leg is support.
+        bool swingPhase = false;
+        
+        // We want to minimize the kinetic energy by minimizing COM movement, so we track the
+        // positions of the com in order to track the velocity.  We initialize it to the inital value.
+        const double* com_0 = robot_node->getCenterOfMass();
+        std::vector<double> com_prev;
+        
+        // Store the previous values in a vector, as the array pointed to is deallocated each time step.
+        for (int i = 0; i < 3; i++) {
+          com_prev.push_back(com_0[i]);
+        }
+        
+        // Move into the initial position.
+        double delay = 1.2;      
+        while (robot->step(timeStep) != -1 && robot->getTime() < delay) {
+          LHipYawPitch->setPosition(0);
+          LHipRoll->setPosition(0);
+          LHipPitch->setPosition(-0.7332);
+          LKneePitch->setPosition(1.4664);
+          LAnklePitch->setPosition(-0.7332);
+          LAnkleRoll->setPosition(0);
+          RHipYawPitch->setPosition(0);
+          RHipRoll->setPosition(0);
+          RHipPitch->setPosition(-0.7332);
+          RKneePitch->setPosition(1.4664);
+          RAnklePitch->setPosition(-0.7332);
+          RAnkleRoll->setPosition(0);                
+        }
+        
+        // Play the motion.
+        forwardsTest.play();
+        
+        // Set to true if robot fell and broke loop early.
+        bool fell = false;
+        
+        // Strangely, neither simulationReset does nor simulationResetPhysics work in setting
+        // resetting the velocities and accelerations of the robot.  Thus, we bring give time to slow NAO
+        // to prevent one organism from messing up the next.
+        double postDelay = 1;
+      
+        // Simulate robot.  If robot is still stable at the end of the motion file, break.
+        while (robot->step(timeStep) != -1 && robot->getTime() < forwardsTest.getDuration()/1000.0+delay+postDelay) {
+          // Strangely, neither simulationReset does nor simulationResetPhysics work in setting
+          // resetting the velocities and accelerations of the robot.  Thus, we bring give time to slow NAO
+          // to prevent one organism from messing up the next.
+          if (forwardsTest.isOver()) {
+            //std::cout << "Motion playback finished at " << robot->getTime() << " s.\n";
+            continue;
+          }
+        
+          // Don't attempt to control every step.  Waiting more steps can reduce noise.
+          static int ticker = 0;
+          ticker++;
+          if (ticker > STEPS_PER_CONTROL) {
+            // Get the center of mass.
+            const double* com = robot_node->getCenterOfMass();
+            
+            // Find the magnitude of the velocity vector of the COM.
+            double comV = sqrt(0*pow(com[0]-com_prev[0],2)+pow(com[1]-com_prev[1],2)+pow(com[2]-com_prev[2],2));
+            
+            // Add the velocity magnitude to the organism's member variable.
+            o.m_totalCOMVelocity += comV / (timeStep * STEPS_PER_CONTROL);
+            
+            // Set the current COM to be the previous COM.
+            for (int i = 0; i < 3; i++) {
+              com_prev.push_back(com[i]);
+            }
+          
+            // Get the inputs (zmpx, zmpy, respective motor target position).
+            auto zmps = getZMPCoordinates(fsrL, fsrR);
+            double zmplx = zmps[0].m_x;
+            double zmply = zmps[0].m_y;
+            double zmprx = zmps[1].m_x;
+            double zmpry = zmps[1].m_y;
+            
+            // Add to the organism's m_totalZMPDistance member so that we can reward
+            // keeping the zmp x y closer to zero state.
+            // We weight by how much time has been spent at this zmp coordinate.
+            // Add the dominant foot zmps.
+            if (zmps[0].m_isSupporting) {
+              o.m_totalZMPDistance += sqrt(pow(zmplx, 2)+pow(zmply, 2))/(STEPS_PER_CONTROL*timeStep);          
+            }
+            else {
+              o.m_totalZMPDistance += sqrt(pow(zmprx, 2)+pow(zmpry, 2))/(STEPS_PER_CONTROL*timeStep);          
+            }
+            
+            // Put the control inputs into a vector to pass to the control function.
+            std::vector<double> xR;
+            std::vector<double> xL;
+            
+            // Loop through the control / input motors and put their target positions into the x vector.
+            for (auto m : inputMotorsR) {
+              xR.push_back(m->getTargetPosition());
+            }
+            for (auto m : inputMotorsL) {
+              xL.push_back(m->getTargetPosition());
+            }
+            
+            /*
+            // Modified: just use ZMPs as inputs.
+            xR = {zmprx, zmpry, zmplx, zmply};
+            xL = {zmplx, zmply, zmprx, zmpry};
+            */
+            // Generate each output variable based on the input (ie, loop through the system of equations).
+            // Note that we need to multiply some inputs by negative to correctly mirror the motions.
+            // The ShoulderRoll, ElbowYaw, and ElbowRoll should be multiplied by -1.  The ShoulderPitch should not.
+            std::vector<double> mirror = {1, -1};//, -1, -1};  We are using only the shoulder roll and pitch in this modification.
+            for (int j = 0; j < p.m_numOutputVars; j++) {
+              // Find the respective motor input position and clamp it to the min:max bounds of that motor.
+              double inputR = o.m_genetics[j].calculateValue(xL);
+              double inputL = mirror[j]*o.m_genetics[j].calculateValue(xR);
+              
+              // Handle NaN results.  If is NaN, set to zero.  Else, don't modify.            
+              inputR = std::isnan(inputR) ? 0 : inputR;
+              inputL = std::isnan(inputL) ? 0 : inputL;
+              
+              inputR = clamp(inputR, outputMotorsR[j]->getMinPosition(), outputMotorsR[j]->getMaxPosition());   
+              inputL = clamp(inputL, outputMotorsL[j]->getMinPosition(), outputMotorsL[j]->getMaxPosition());   
+              outputMotorsR[j]->setPosition(inputR);
+              outputMotorsL[j]->setPosition(inputL);
+            }
+            
+            ticker = 0;
+          }
+        
+          // If the robot falls, break.
+          if (!isStable(fsrL, fsrR)) {
+            fell = true;
+            break;
+          }
+        }
+        
+        // If we did not travel at least 0.5m in x and stay stable the whole way, we don't reward the organism
+        // by increasing its characteristics.
+        // Get the total distance in x travelled.
+        const double* trans = trans_field->getSFVec3f();
+        if (!fell && trans[0] > 0.5) {
+          // Get the time the robot was stable.
+          //double stableTime = robot->getTime() - t0 - delay - postDelay;
+          o.m_totalStableTime += forwardsTest.getDuration()/1000.0; //stableTime;
+          o.m_totalTranslationX += 0.5;    // We limit benefit to 0.5 m as we want to mainly reward reducing comv.
+        }
+        
+        // Increment runs counter.
+        ++o.m_numSimulations;
+      
+        // Get the fitness score of this Organism.  This needs to be done after updating
+        // m_totalStableTime and m_numSimulations.
+        double fitnessScore = o.getFitness();
+        
+        // If this is a new best fitness scoring organism, we save it and print to console.
+        if (fitnessScore > bestFitnessScore) {
+          bestFitnessScore = fitnessScore;
+          std::cout << "-------------------------------\n";
+          std::cout << "New best fitness score: " << bestFitnessScore << std::endl;
+          std::string bestOrganismFilename = "pops/star.organism";
+          std::cout << "Saving best organism to: " << bestOrganismFilename << "\n";
+          o.printFitnessComponents();
+          std::cout << "-------------------------------\n";
+          o.save(bestOrganismFilename);
+        }
+      }
+      
+      // Even if we skip the simulation run due to have already calcuating it, we still
+      // will check the stdev of the generation for adjusting the mutation chance.
+      // Push back the individual organism weighted components for each property onto their
+      // respective vectors so that we can find the population std dev for each generation
+      // to adjust the mutation rate going forward.
+      std::vector<double> components = o.getFitnessComponents();
+      timeComponents.push_back(components[0]);
+      zmpComponents.push_back(components[1]);
+      translationXComponent.push_back(components[2]);
+      comVelocityComponent.push_back(components[3]);
+      
+      // Reset simulation.  There seems to be a bug where inertia is not reset, so we have to reset
+      // twice to counter this (?).
+      robot->simulationReset();
+      robot->step(timeStep);
+      robot->simulationReset();
+      //robot->simulationResetPhysics();
+    }
+    
+    // Each organism in this generation of the population has been simulated now.
+    // We sort by the fitness score.
+    p.sortOrganisms();
+    
+    // Track the runtime of each generation to add to m_runtime of the population object.
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> diff = end-start;
+    p.m_runtime += diff.count();
+    
+    // Save this generation for possible plotting purposes.
+    std::cout << "Saving to historic generation population file at pops/generation_" << p.m_generation << ".pop\n";
+    std::string generationFilename = DEFAULT_GENERATION_FILE_PREFIX + std::to_string(p.m_generation) + ".pop";
+    p.save(generationFilename);
+    
+    // Adjust the mutation rate based on the standard deviation of the fitness components to prevent stagnation.
+    // The mutation chance for each generation_i is of the form:
+    // chance_i = (num_inputs*num_outputs)^-1 * (stddev_0 / s_i)^c
+    // Where stddev_0 is a base approximation of the standard deviation for a completely new population
+    // and c is a constant.  
+    // Get the base mutation chance which is (num_inputs*num_outputs)^-1.
+    double baseMutation = 1.0/static_cast<double>(p.m_numInputVars * p.m_numOutputVars);
+    double totalStdDev = sqrt(pow(getStdDev(timeComponents),2)+pow(getStdDev(zmpComponents),2)+pow(getStdDev(translationXComponent),2)+pow(getStdDev(comVelocityComponent),2));
+    std::cout << "Component standard deviation: " << totalStdDev << std::endl;
+    p.m_chanceMutation = baseMutation*pow(MUTATION_CHANCE_STD_DEV_BASE/totalStdDev,MUTATION_CHANCE_C);
+    std::cout << "Adjusting mutation chance to: " << p.m_chanceMutation << std::endl;
+    
+    // Save best performing half of population (POPULATION_SIZE/2).
+    std::cout << "Pruning weakest half of population.\n";
+    p.m_organisms.erase(p.m_organisms.begin() + p.m_numOrganisms/2, p.m_organisms.end());
+    
+    // Breed the best performing half of the population (POPULATION_SIZE/2/2 == POPULATION_SIZE/4).
+    std::cout << "Breeding population.\n";
+    p.reproduceOrganisms();
+
+    
+    // Make copies of random members of the previous generation and children, 
+    // mutate them, and add them to population.
+    // Adds another POPULATION_SIZE/4, and restores our population to POPULATION_SIZE.
+    std::cout << "Mutating population.\n";
+    p.mutateOrganisms();
+    
+    // Update the default population file which holds the latest population.
+    // Default file name is DEFAULT_POPULATION_FILENAME.
+    std::cout << "Saving to latest population file at " << DEFAULT_POPULATION_FILENAME << '\n';
+    p.save();
+  }
+  
+  // Clean up and return.
+  delete robot;
+  return 1;
+}
+
+int main(int argc, char **argv) {
+  // Testing controller for c = 1 with simplified outputs.  Uses l and r zmp coords as inputs, shoulder pitch / roll
+  // as outputs (4 inputs 4 outputs).
+  /*
+  DEFAULT_POPULATION_FILENAME = "pops/simpleTest/population.pop";
+  DEFAULT_GENERATION_FILE_PREFIX = "pops/simpleTest/generation_";
+  MUTATION_CHANCE_C = 1;
+  simpleTest(argc, argv);
+  */
+  
+  // Testing controller evolution for various mutation constants.
+  /*
+  DEFAULT_POPULATION_FILENAME = "pops/c0/population.pop";
+  DEFAULT_GENERATION_FILE_PREFIX = "pops/c0/generation_";
+  MUTATION_CHANCE_C = 0;
+  test(argc, argv);
+  */
+  
+  /*
   DEFAULT_POPULATION_FILENAME = "pops/c1/population.pop";
   DEFAULT_GENERATION_FILE_PREFIX = "pops/c1/generation_";
   MUTATION_CHANCE_C = 1;
   test(argc, argv);
+  */
   
+  /*
+  DEFAULT_POPULATION_FILENAME = "pops/c2/population.pop";
+  DEFAULT_GENERATION_FILE_PREFIX = "pops/c2/generation_";
+  MUTATION_CHANCE_C = 2;
+  test(argc, argv);
+
   DEFAULT_POPULATION_FILENAME = "pops/c3/population.pop";
   DEFAULT_GENERATION_FILE_PREFIX = "pops/c3/generation_";
   MUTATION_CHANCE_C = 3;
   test(argc, argv);
-
+  */
+  
   // Evolve the controllers (single leg stability).
-  //runEvolutions(argc, argv);
+  runEvolutions(argc, argv);
+    
+  /*
+  // Print generation data to output csv file.  Could put this in a loop, but only 4 constants we are checking.
+  std::cout << "Writing generational data for c = 0" << std::endl;
+  DEFAULT_POPULATION_FILENAME = "pops/c0/population.pop";
+  DEFAULT_GENERATION_FILE_PREFIX = "pops/c0/generation_";
+  MUTATION_CHANCE_C = 0;
+  writePopulationInfo("pops/c0/historicalData.csv", 100, 6, 4);
   
-  // Print generation data to output csv file.
-  //writePopulationInfo("pops/historicalData.csv", 100, 6, 4);
+  std::cout << "Writing generational data for c = 1" << std::endl;
+  DEFAULT_POPULATION_FILENAME = "pops/c1/population.pop";
+  DEFAULT_GENERATION_FILE_PREFIX = "pops/c1/generation_";
+  MUTATION_CHANCE_C = 1;
+  writePopulationInfo("pops/c1/historicalData.csv", 100, 6, 4);
   
+  std::cout << "Writing generational data for c = 2" << std::endl;
+  DEFAULT_POPULATION_FILENAME = "pops/c2/population.pop";
+  DEFAULT_GENERATION_FILE_PREFIX = "pops/c2/generation_";
+  MUTATION_CHANCE_C = 2;
+  writePopulationInfo("pops/c2/historicalData.csv", 100, 6, 4);
+  
+  std::cout << "Writing generational data for c = 3" << std::endl;
+  DEFAULT_POPULATION_FILENAME = "pops/c3/population.pop";
+  DEFAULT_GENERATION_FILE_PREFIX = "pops/c3/generation_";
+  MUTATION_CHANCE_C = 3;
+  writePopulationInfo("pops/c3/historicalData.csv", 100, 6, 4);
+  */
   return 3;
 }
