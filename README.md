@@ -36,11 +36,12 @@ where Wt, Wzmp, Wx, and Wcom are constant positive scalars used to weight the fi
 
 The ZMP is useful for determining bipedal stability in a LIPM sense.  In addition to the fitness function, the ZMP values are also used to determine controller switching (see Figure 4) and, in conjunction with the total foot force values, if the robot has fallen over so that a given organism’s simulation can be ended.  The total ZMP distance is calculated as follows:
 
-![eq2](https://user-images.githubusercontent.com/16945020/116784787-f3d42300-aa4a-11eb-8a8b-585e40edf6cb.png)
+![eq2](https://user-images.githubusercontent.com/16945020/116785076-7dd0bb80-aa4c-11eb-87ca-32340b3a1130.png)
 
 where the x and y ZMP coordinates for a given foot are calculated respectively in Eq. 3 and Eq. 4 [12] [13].  The two-norm of the ZMP based on these coordinates is found at each control step in the simulation, multiplied by the length of the control step, and summed over all steps.  The sum is then divided by the total time of the simulation, t.
 
-![eq3,4](https://user-images.githubusercontent.com/16945020/116784794-fe8eb800-aa4a-11eb-9141-bbbc00ebb6e5.png)
+![eq3,4](https://user-images.githubusercontent.com/16945020/116785065-74475380-aa4c-11eb-85e3-7ad65d9e49cd.png)
+
 
 W and L are respectively the width and length of the foot (assumed to be rectangular).  f1, f2, f3 and f4 are the forces in each corner of the foot.
 
@@ -120,7 +121,7 @@ Note how as the population standard deviation continues to increase (due to the 
 
 Note that the mean fitness lags the max fitness.  As new local maxima are found, the respective organism’s genes are spread into the population over subsequent generations through breeding and mutated copies.  However, the generated motion (Figure 10) after 1000 generations for controller A is not natural / human-like.
 
-![fig10](https://user-images.githubusercontent.com/16945020/116784975-f97e3880-aa4b-11eb-95e7-27ebde68331a.png)
+![fig10](https://user-images.githubusercontent.com/16945020/116785138-cc7e5580-aa4c-11eb-8c3a-adb24e1e99e9.png)
 
 While there are semblances to natural gait, the robot favours holding its arms behind its body, as opposed to a human gait in which the arms would swing back-and-forth.  This is likely due to the punishing ZMP component in the fitness score.  The knees are bent forward during the gait cycle due to the LIPM nature of the open loop gait, which moves the COM and ZMP coordinates slightly forward.  It is also possible that the unnatural gait could be improved by reducing the search space, such as by solving the form of the governing equations to provide a better template for the output variable calculation (in comparison to Eq. 6).
 
@@ -133,24 +134,43 @@ Due to time constraints, controller A and controller B were tested separately, a
 # References
 
 [1] 	R. Tedrake, S. Kuindersma, R. Deits and K. Miura, “A closed-form solution for real-time zmp gait generation and feedback stabilization,” IEEE-RAS 15th International Conference on Humanoid Robots, pp. 936-940, Nov 2015. 
+
 [2] 	H. R. Vejdani, A. Wu, H. Geyer and J. W. Hurst, “Touch-down angle control for spring-mass walking,” IEEE International Conference on Robotics and Automation (ICRA), pp. 5101-5106, May 2015. 
+
 [3] 	R. Wang, S. Hudson, Y. Li, H. Wu and C. Zhou, “Normalized Neural Network for Energy Efficient Bipedal Walking Using Nonlinear Inverted Pendulum Model,” IEEE International Conference on Robotics and Biomimetics, pp. 1400-1406, 2019. 
+
 [4] 	B. Semwal, M. Raj and G. Nanda, “Hybrid Model for Passive Locomotion Control of a Biped Humanoid: The Artificial Neural Network Approach,” International Journal of Interactive Multimedia and Artificial Intelligence, vol. 5, pp. 40-46, 2018. 
+
 [5] 	W. L. Ma, Y. Or and A. Ames, “Dynamic Walking on Slippery Surfaces: Demonstrating Stable Bipedal Gaits with Planned Ground Slippage,” IEEE International Conference on Robotics and Automation, May 2019. 
+
 [6] 	X. Xiao and F. Asano, “Analytical Solution of Target Walking Speed Generation by Underactuated Compass-like Bipedal Walker,” IEEE International Conference on Robotics and Biomimetics, pp. 1017-1022. 
+
 [7] 	Z. Li, X. Cheng, X. Peng, P. Abbeel, S. Levine, G. Berseth and K. Sreenath, “Reinforcement Learning for Robust Parameterized Locomotion Control of Bipedal Robots,” International Conference on Robotics and Automation, 2021. 
+
 [8] 	V. Ganapathy, C. Soh and W. Lui, “Utilization of Webots and Khepera II as a platform for Neural Q-Learning controllers,” IEEE Symposium on Industrial Electronics Applications, vol. 2, pp. 783-788, 2009. 
+
 [9] 	Y. Pan and X. Ma, “Design of Industrial Robot Sorting System with Visual Guidance Based on Webots,” 3rd International Conference on Computer and Communication Systems, pp. 516-521, 2018. 
+
 [10] 	L. Hohl, R. Tellez, O. Michel and A. Janijspeert, “Aibo and Webots: Simulation, wireless remote control and controller transfer,” Robotics and Autonomous Systems, vol. 54, no. 6, pp. 472-485, 2006. 
+
 [11] 	A. Massah, A. Sharifi, Y. Salehinia and F. Najafi, “An Open Loop Walking on Different Slopes for NAO Humanoid Robot,” IEEE International Symposium on Robotics and Intelligent Sensors, pp. 296-304, 2012. 
+
 [12] 	C. Gil, H. Calvo and H. Sossa, “Learning an Efficient Gait Cycle of a Biped Robot Based on Reinforcement Learning and Artificial Neural Networks,” Applied Sciences - Advanced Mobile Robotics, pp. 502-526, 2019. 
+
 [13] 	J.-L. Lin and W.-C. J. Y.-J. C. Kao-Shing Hwang, “Gait Balance and Acceleration of a Biped Robot,” IEEE Access, vol. 4, pp. 2439-2449, 2016. 
+
 [14] 	M. Serpell and J. Smith, “Self-Adaptation of Mutation Operator and Self-Adaptation of Mutation Operator and in Genetic Algorithms,” Evolutionary Computation, vol. 18, no. 3, pp. 491-514, 2010. 
+
 [15] 	R. Greenwell and J. Angus, “Optimal Mutation Probability for Genetic Algorithm,” Mathematical annd Computer Modeling, vol. 21, no. 8, pp. 1-11, 1995. 
+
 [16] 	A. Hassanat, K. Almohammadi, E. Alkafaween, E. Abunawas, A. Hammouri and A. Hammouri, “Choosing Mutation and Crossover Ratios for Genetic Algorithms—A Review with a New Dynamic Approach,” Information, vol. 10, no. 390, 2019. 
+
 [17] 	T. Li, H. Geyer, C. G. Atkeson and A. Rai, “Using Deep Reinforcement Learning to Learn High-Level Policies on the ATRIAS Biped,” IEEE International Conference on Robotics and Automation, pp. 263-269, 2019. 
+
 [18] 	R. J. Griffin, G. Wiedebach, S. Bertand, A. Leonessa and J. Pratt, “Straight-Leg Walking Through Underconstrained Whole-Body Control,” IEEE International Conference on Robotics and Automation, 2018. 
+
 [19] 	Y. Huang, Q. Wang, B. Chen and G. Xie, “Modeling and gait selection of passivity-based seven-link bipeds with dynamic series of walking phases,” Robotica, vol. 30, no. 1, pp. 39-51, 2012. 
+
 [20] 	M. Susi, “Gait Analysis for Pedestrian Navigation Using MEMS Handheld Devices,” University of Calgary, 2015. 
 
 
